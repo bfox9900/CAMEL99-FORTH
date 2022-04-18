@@ -30,10 +30,19 @@ the earlier ITC system and the other for the DTC system.
 
 ### DSK1.START Contents
 
-'\ V1.0 START file loads NEEDS/FROM and then loads ANS Forth extensions'
+'\ V1.0 START file loads ANS Forth extensions'
 
 'S" DSK1.ISOLOOPS" INCLUDED'
 
 'S" DSK1.SYSTEMDTC" INCLUDED'
 
 'DECIMAL'
+
+### Using FAST-RAM Primitives
+Some of the common primitives use by Forth are copied into the tiny 16-bit RAM in the TI-99 console.  To give the compiler access to these primitives use:
+
+'INCLUDE DSK1.HSPRIMS'
+
+In your code or add that line to the START file if you always want them used.
+These are STATE smart compiling words and may act weird if used in "creative"
+ways.
