@@ -1,12 +1,13 @@
 # CAMEL99-FORTH
 Apr 18, 2022
 
-This is the Direct Threaded version of Camel99 Forth. It is faster than ITC
-code by as much as 18% under some conditions.  It is not ideal however for large
-projects on the TI 99 as Forth definitions consume an extra 4 bytes per word.
+This is the Direct Threaded version of Camel99 Forth built on source code improvements that have been developed in the ITC version.
+The DTC version is faster than ITC code by as much as 18% under some conditions.
+It is not ideal however for large projects on the TI 99 as Forth definitions consume an extra 4 bytes per word. The TI-99 is a little memory constrained.
 
 However as a platform for linking together CODE words it might be useful since
-CODE words take 2 bytes less than the ITC version.
+CODE words take 2 bytes less than the ITC version. And of course if your
+project can fit it's a faster system.
 
 ### *NOTICE*
 As of April 2022 the library files have not all been vetted and many will
@@ -26,3 +27,12 @@ boots to add this functionality.
 
 DSK1.START also pulls in DSK1.SYSTEMDTC to add the rest of the CORE words to the kernel.  The file name is changed from DSK1.SYSTEM to clarify that one is FORTH
 the earlier ITC system and the other for the DTC system.
+
+### DSK1.START Contents
+
+\ V1.0 START file loads NEEDS/FROM and then loads ANS Forth extensions
+
+S" DSK1.ISOLOOPS" INCLUDED
+S" DSK1.SYSTEMDTC" INCLUDED
+
+DECIMAL
