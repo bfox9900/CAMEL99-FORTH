@@ -46,3 +46,9 @@ Some of the common primitives use by Forth are copied into the tiny 16-bit RAM i
 In your code or add that line to the START file if you always want them used.
 These are STATE smart compiling words and may act weird if used in "creative"
 ways.
+The words affected are:
+- @
+- !
+- DUP
+- DROP
+- +
