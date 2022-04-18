@@ -30,9 +30,9 @@ the earlier ITC system and the other for the DTC system.
 
 ### DSK1.START Contents
 
-\ V1.0 START file loads NEEDS/FROM and then loads ANS Forth extensions
-
-S" DSK1.ISOLOOPS" INCLUDED
-S" DSK1.SYSTEMDTC" INCLUDED
-
-DECIMAL
+'\ V1.0 START file loads NEEDS/FROM and then loads ANS Forth extensions'
+''
+'S" DSK1.ISOLOOPS" INCLUDED'
+'S" DSK1.SYSTEMDTC" INCLUDED'
+''
+'DECIMAL'
