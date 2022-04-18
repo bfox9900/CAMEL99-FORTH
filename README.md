@@ -51,4 +51,4 @@ The words affected are:
 - !
 - DUP
 - DROP
-- +
+- '+'
