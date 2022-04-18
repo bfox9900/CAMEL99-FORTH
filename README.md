@@ -10,8 +10,10 @@ CODE words take 2 bytes less than the ITC version.
 
 ### *NOTICE*
 As of April 2022 the library files have not all been vetted and many will
-crash. This primarily due to optimization assumptions made for ITC code that
+crash. This is primarily due to optimization assumptions made for ITC code that
 do not work with the DTC code.
+
+Needless to say the ITC version of INLINE does not work at this time.
 
 ### Important differences
 
