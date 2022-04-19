@@ -3,11 +3,14 @@ Apr 18, 2022
 
 This is the Direct Threaded version of Camel99 Forth built on source code improvements that have been developed in the ITC version.
 The DTC version is faster than ITC code by as much as 18% under some conditions.
-It is not ideal however for large projects on the TI 99 as Forth definitions consume an extra 4 bytes per word. The TI-99 is a little memory constrained.
+It is not ideal however for large projects on the TI 99 as Forth definitions
+consume an extra 4 bytes per word.
 
-However as a platform for linking together CODE words it might be useful since
-CODE words take 2 bytes less than the ITC version. And of course if your
-project can fit it's a faster system.
+### Super Cart to the Rescue
+The TI-99 Editor/Assembler cartridge is available with extra RAM on board.
+(Super Cart is the default version on the Classic99 Emulator)
+If you have a Super Cart then you can load DSK1.CAM99DSC which puts the Forth
+Kernel in Super Cart RAM. This lets you use the 32K CPU RAM for your programs.
 
 ### *NOTICE*
 As of April 2022 the library files have not all been vetted and many will
