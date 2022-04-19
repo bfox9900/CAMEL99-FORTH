@@ -84,14 +84,25 @@ The code for DOCOL in this case would be
 
 
 `l: _docol     IP RPUSH,  \ push current IP onto R stack`
+
 `              IP 4 AI,   \ advance IP past the branching code
+
 `              NEXT,`     \ run the NEXT Forth word
 
-In CAMEL99 DTC Forth we replace the the Branch with Branch and LINK. (BL)
-The BL instruction lets CPU compute the new IP address for us and puts it in
+In CAMEL99 DTC Forth we replace the Branch with Branch and LINK. (BL)
+
+`<header> <BL @DOCOL> <code-field> <code-field> ...  <exit>`
+
+The BL instruction lets the CPU compute the new IP address for us and puts it in
 R11. This speeds up the DOCOL executor by replacing the addition with a simple
 MOV instruction.
 
 `l: _docol     IP RPUSH,`
+
 `              R11 IP MOV,`
+
 `              NEXT,`
+
+(  It might be possibe to improve this further by making R11 the Forth IP.
+  This would require extra overhead however to push/pop R11 for all native
+  sub-routine calls)
