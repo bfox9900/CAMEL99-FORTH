@@ -80,8 +80,7 @@ A symbolic view of a DTC Forth word looks like this:
 `<header> <B @DOCOL> <code-field><code-field> ...  <exit>`
 
 In the TMS9900 CPU the <B @DOCOL> uses four bytes.
-The code for DOCOL in this case would be
-
+The code for DOCOL in this case would be:
 
 `l: _docol     IP RPUSH,  \ push current IP onto R stack`
 
