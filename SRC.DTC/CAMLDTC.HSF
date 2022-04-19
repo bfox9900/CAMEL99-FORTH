@@ -19,24 +19,13 @@
 \ or via email to bj@camelforth.com
 
 \ History
-\ Oct 21 2019, replaced critical routines with CODE.
-\              15% compile time speedup on TI-99
-
-\ Dec 29 2019  V2.58 added VPG variable for multiple display screens
-\              >VPOS computes address from col,row & adds VPG
-\              added TOPLN code word to calc. topln of a screen
-\ Jan 28 2020  V2.59 Replaced ?NUMBER with NUMBER?
-\              Minor changes to <INTERPRET> Saved 34 bytes.
-\ Oct 2020     V.266 Added CONTEXT array and CURRENT to support wordlists
-\              Fixed bug in RAKE and fixed ISOLOOPS
-
+\ Apr 2022  Moved to Direct threaded code
 
 \ ===================[ COMPILER CONTROL VALUES ]======================
 CROSS-COMPILING
 
-FALSE VALUE SLOWER     \ TRUE (more Forth) 8 bytes BIGGER in DTC !!
 FALSE VALUE HASHING
-FALSE VALUE CARTRIDGE
+A000  VALUE KERNORG
 
 \ ======================================================================
 \ M E M O R Y   U S A G E   D E F I N I T I O N S
@@ -93,15 +82,9 @@ cr .( Constants and VARIABLEs...)
 
 TARGET-COMPILING
 
-\ grows down             \ 4 cells underflow protection
   'SP0  CONSTANT SP0    \ ^^^  data stack, 28 cells deep,
-
-\  grows down
   'RP0  CONSTANT RP0    \ ^^^ Return stack 96 cells max, shares space with TIB
-
-\  grows up ^^^
   'TIB  CONSTANT TIB   \ tib grows up towards RP0. Never more that
-\  grows up ^^^
 
 \ Utility constants
         0 CONSTANT FALSE
@@ -182,6 +165,7 @@ VARIABLE VTOP
   _DODOES  CONSTANT _DODOES
   _BRANCH >HSRAM  CONSTANT _HSBRANCH
   _?BRANCH >HSRAM CONSTANT _?HSBRANCH
+  _EXIT   >HSRAM  CONSTANT _HSEXIT
   _LIT    >HSRAM  CONSTANT _HSLIT
   _@      >HSRAM  CONSTANT _HS@
   _!      >HSRAM  CONSTANT _HS!
@@ -845,9 +829,10 @@ TARGET-COMPILING
 \ LOOPS AND BRANCH COMPILERS FOR THE TI-99 SYSTEM
 [CC] DECIMAL [TC]
 
-\ : TEST 2000 0 DO  10 10 AT-XY I U.  LOOP  ;
-
 \ ** changed to load at boot time from DSK1.ISOLOOPS
+
+
+
 
 \ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 \  ===[ CANNOT COMPILE IF, ELSE, THEN, BEGIN UNTIL ETC. AFTER THIS ]===
@@ -914,6 +899,11 @@ TARGET-COMPILING
 \ =======================================================================
 \ B O O T  U P  C O D E
 
+[CC] KERNORG 6000 =
+[IF]   [TC] : VERSION  TS" CAMEL99 DTC Forth SuperCart V2.68" ;
+[ELSE] [TC] : VERSION  TS" CAMEL99 DTC Forth V2.68" ;
+[THEN]
+
 : WARM     ( -- )
 \ *G restarts Forth and loads DSK1.START
               80 83C2 C!
@@ -931,7 +921,7 @@ TARGET-COMPILING
               LATEST DUP CONTEXT ! CURRENT !
               FLOOR ON
               TEXT
-              TS" CAMEL99 DTC Forth V2.68X" TYPE
+              VERSION TYPE
               HEX
               TS" DSK1.START" INCLUDED
               ABORT
@@ -960,18 +950,24 @@ CR .( Forth Kernel compiled completely")
 
 \ ======================================================================
 \  P A T C H   T H E   T A R G E T  S Y S T E M   V A R I A B L E S
-
-[CC]   XLATEST @ DUP LATEST T! ORGLAST T!
-            THERE DUP DP T!   ORGDP T!
+[CC]
+KERNORG 6000 =
+[IF]
+      XLATEST @ DUP LATEST T! ORGLAST T!
+      THERE DP T!   A000 ORGDP T!
+[ELSE]
+         XLATEST @ DUP LATEST T! ORGLAST T!
+       THERE DUP DP T!   ORGDP T!
+[THEN]
 
 \ ======================================================================
 \ P A T C H   T A R G E T   I M A G E  F I L E   H E A D E R
-
-CARTRIDGE
+[CC]
+KERNORG 6000 =
 [IF]
-     FILENAME: CAML99DT
+     FILENAME: CAM99DSC
 [ELSE]
-     FILENAME: DTCTEST
+     FILENAME: CAM99DTC
 [THEN]
          T' COLD BOOT-ADDRESS T!
 
