@@ -103,6 +103,6 @@ MOV instruction.
 
 `              NEXT,`
 
-(  It might be possibe to improve this further by making R11 the Forth IP.
+(  It might be possible to improve this further by making R11 the Forth IP.
   This would require extra overhead however to push/pop R11 for all native
   sub-routine calls)
