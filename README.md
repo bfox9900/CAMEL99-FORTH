@@ -1,4 +1,4 @@
-# CAMEL99-FORTH
+# CAMEL99-FORTH DTC
 Apr 18, 2022
 
 This is the Direct Threaded version of Camel99 Forth built on source code improvements that have been developed in the ITC version.
