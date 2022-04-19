@@ -25,8 +25,8 @@ do IF/ELSE/THEN , BEGIN/UNTIL etc.
 The file DSK1.ISOLOOPS is pulled in by the DSK1.START file when the system
 boots to add this functionality.
 
-DSK1.START also pulls in DSK1.SYSTEMDTC to add the rest of the CORE words to the kernel.  The file name is changed from DSK1.SYSTEM to clarify that one is FORTH
-the earlier ITC system and the other for the DTC system.
+DSK1.START also pulls in DSK1.SYSTEMDTC to add the rest of the CORE words to the kernel.  The file name is changed from DSK1.SYSTEM to clarify that one file is
+for the earlier ITC system and the SYSTEMDTC is for the DTC system.
 
 ### DSK1.START Contents
 
@@ -52,3 +52,19 @@ The words affected are:
 - DUP
 - DROP
 - '+'
+
+Using the 16 bit primitives only improves benchmarks that make heavy use of
+these primitives. Normal speed increases on the order of 1..2%.
+
+### Implementation Details for Forth Nerds
+In a DTC Forth each CODE word has only the dictionary header followed by the
+machine code that it runs.  Each Forth word in this implementation has a four
+byte entry routine that consists of the branch and link instruction (BL) and the
+address of the "executor" code.
+Executors are my name for the code that determines how the Forth word will be interpreted. In this system there are four "types" of Executors.
+- DOCOL
+- DOVAR
+- DOCON
+- DOUSER
+
+There is a special case for the DOES> word called DODOES.
