@@ -72,10 +72,10 @@ There is a special case for the DOES> word called DODOES.
 ### Why we BL to the Executor
 It is possible to make DTC Forth using a Branch. (JMP in some instructions sets)
 If you use a simple Branch your Executor code must move the Forth interpreter
-pointer (IP) past the branch instruction and the address of the executor.
+pointer (IP) past the branch instruction and the address of the executor to get
+to the list of code pointers in the word.
 
 A symbolic view of a DTC Forth word looks like this:
-
 
 `<header> <B @DOCOL> <code-field><code-field> ...  <exit>`
 
