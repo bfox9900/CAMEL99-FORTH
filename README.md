@@ -85,9 +85,9 @@ The code for DOCOL in this case would be
 
 `l: _docol     IP RPUSH,  \ push current IP onto R stack`
 
-`              IP 4 AI,   \ advance IP past the branching code
+`              IP 4 AI,   \ advance IP past the branching code`
 
-`              NEXT,`     \ run the NEXT Forth word
+`              NEXT,      \ run the NEXT Forth word`
 
 In CAMEL99 DTC Forth we replace the Branch with Branch and LINK. (BL)
 
