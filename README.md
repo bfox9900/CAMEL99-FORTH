@@ -56,11 +56,11 @@ The words affected are:
 Using the 16 bit primitives only improves benchmarks that make heavy use of
 these primitives. Normal speed increases on the order of 1..2%.
 
-### Implementation Details for Forth Nerds
+## Implementation Details for Forth Nerds
 In a DTC Forth each CODE word has only the dictionary header followed by the
-machine code that it runs.  Each Forth word in this implementation has a four
-byte entry routine that consists of the branch and link instruction (BL) and the
-address of the "executor" code.
+machine code that it runs.  Each Forth word in a DTC implementation must have
+an entry routine that consists of a branch to the "executor" code.
+
 Executors are my name for the code that determines how the Forth word will be interpreted. In this system there are four "types" of Executors.
 - DOCOL
 - DOVAR
@@ -68,3 +68,30 @@ Executors are my name for the code that determines how the Forth word will be in
 - DOUSER
 
 There is a special case for the DOES> word called DODOES.
+
+### Why we BL to the Executor
+It is possible to make DTC Forth using a Branch. (JMP in some instructions sets)
+If you use a simple Branch your Executor code must move the Forth interpreter
+pointer (IP) past the branch instruction and the address of the executor.
+
+A symbolic view of a DTC Forth word looks like this:
+
+
+`<header> <B @DOCOL> <code-field><code-field> ...  <exit>`
+
+In the TMS9900 CPU the <B @DOCOL> uses four bytes.
+The code for DOCOL in this case would be
+
+
+`l: _docol     IP RPUSH,  \ push current IP onto R stack`
+`              IP 4 AI,   \ advance IP past the branching code
+`              NEXT,`     \ run the NEXT Forth word
+
+In CAMEL99 DTC Forth we replace the the Branch with Branch and LINK. (BL)
+The BL instruction lets CPU compute the new IP address for us and puts it in
+R11. This speeds up the DOCOL executor by replacing the addition with a simple
+MOV instruction.
+
+`l: _docol     IP RPUSH,`
+`              R11 IP MOV,`
+`              NEXT,`
