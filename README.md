@@ -86,7 +86,6 @@ In the TMS9900 CPU the <B @DOCOL> uses four bytes.
 The code for DOCOL in this case would be:
 
 ` l: _docol   IP RPUSH,  \ push current IP onto R stack
-
               IP 4 AI,   \ advance IP past the branching code
               
               NEXT,      \ run the NEXT Forth word`
@@ -100,7 +99,6 @@ R11. This speeds up the DOCOL executor by replacing the addition with a faster
 register to register MOV instruction.
 
 ` l: _docol     IP RPUSH,
-  
                 R11 IP MOV,
   
                 NEXT,`
