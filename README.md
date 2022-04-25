@@ -75,14 +75,16 @@ Executors are my name for the code that determines how the Forth word will be in
 There is a special case for the DOES> word called DODOES.
 
 ### Why we BL to the Executor
-It is possible to make DTC Forth using a Branch. (JMP in some instructions sets)
+It is possible to make DTC Forth using a Branch to the EXECUTOR code.
+(JMP in some instructions sets)
 If you use a simple Branch your Executor code must move the Forth interpreter
 pointer (IP) past the branch instruction and the address of the executor to get
-to the list of code pointers in the word.
+to the list of code pointers in the word and make that address the interpreter
+pointer. (IP)
 
 A symbolic view of a DTC Forth word looks like this:
 
-`<header> <B @DOCOL> <code-field><code-field> ...  <exit>`
+    <header> <B @DOCOL> <code-field><code-field> ...  <exit>
 
 In the TMS9900 CPU the <B @DOCOL> uses four bytes.
 The code for DOCOL in this case would be:
@@ -90,12 +92,12 @@ The code for DOCOL in this case would be:
 ``` 
 l: _docol   IP RPUSH,  \ push current IP onto R stack
             IP 4 AI,   \ advance IP past the branching code 
-             NEXT,      \ run the NEXT Forth word
+            NEXT,      \ run the NEXT Forth word
  ```            
 
 In CAMEL99 DTC Forth we replace the Branch with Branch and LINK. (BL)
 
-`<header> <BL @DOCOL> <code-field> <code-field> ...  <exit>`
+    <header> <BL @DOCOL> <code-field> <code-field> ...  <exit>
 
 The BL instruction lets the CPU compute the new IP address for us and puts it in
 R11. This speeds up the DOCOL executor by replacing the addition with a faster
@@ -105,7 +107,7 @@ and smaller, register to register MOV instruction.
 l: _docol    IP RPUSH,
              R11 IP MOV,
              NEXT,
- ```
+```
 
 (  It might be possible to improve this further by making R11 the Forth IP.
   This would require extra overhead however to push/pop R11 for all native
