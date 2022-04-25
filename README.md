@@ -97,7 +97,7 @@ In CAMEL99 DTC Forth we replace the Branch with Branch and LINK. (BL)
 
 The BL instruction lets the CPU compute the new IP address for us and puts it in
 R11. This speeds up the DOCOL executor by replacing the addition with a faster
-register to register MOV instruction.
+and smaller, register to register MOV instruction.
 
 ```
 l: _docol    IP RPUSH,
