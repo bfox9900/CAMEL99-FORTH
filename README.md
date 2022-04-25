@@ -33,31 +33,32 @@ for the earlier ITC system and the SYSTEMDTC is for the DTC system.
 
 ### DSK1.START Contents
 
-`\ V1.0 START file loads ANS Forth extensions`
-
-` S" DSK1.ISOLOOPS" INCLUDED`
-
-` S" DSK1.SYSTEMDTC" INCLUDED`
-
-` DECIMAL`
+```
+\ V1.0 START file loads ANS Forth extensions
+  S" DSK1.ISOLOOPS" INCLUDED
+  S" DSK1.SYSTEMDTC" INCLUDED ( for DTC this has loops and branching)
+  S" DSK1.HSPRIMS" INCLUDED   ( can be removed to save space)
+  DECIMAL
+``` 
 
 ### Using FAST-RAM Primitives
-Some of the common primitives use by Forth are copied into the tiny 16-bit RAM in the TI-99 console.  To give the compiler access to these primitives use:
+Some of the common primitives use by Forth are copied into the tiny 16-bit RAM in the TI-99 console.  
+To give the compiler access to these primitives the START file include the file: DSK1.HSPRIMS
+There is lower percentage of performance enhancement with this TI-99 trick than in ITC Forth because 
+the underlying DTC architecture is faster.
 
-`INCLUDE DSK1.HSPRIMS`
+HSPRIMS loads STATE smart compiling versions of the following words.
+They and may act weird if used in "creative" ways. You are warned.
 
-In your code or add that line to the START file if you always want them used.
-These are STATE smart compiling words and may act weird if used in "creative"
-ways.
-The words affected are:
+The words affected by HSPRIMS are:
 - @
 - !
 - DUP
 - DROP
 - '+'
 
-Using the 16 bit primitives only improves benchmarks that make heavy use of
-these primitives. Normal speed increases on the order of 1..2%.
+Using the 16 bit primitives can improve benchmarks that make heavy use of
+these primitives. Normal speed increases are on the order of 1..2%.
 
 ## Implementation Details for Forth Nerds
 In a DTC Forth each CODE word has only the dictionary header followed by the
@@ -73,37 +74,39 @@ Executors are my name for the code that determines how the Forth word will be in
 There is a special case for the DOES> word called DODOES.
 
 ### Why we BL to the Executor
-It is possible to make DTC Forth using a Branch. (JMP in some instructions sets)
+It is possible to make DTC Forth using a Branch to the EXECUTOR code.
+(JMP in some instructions sets)
 If you use a simple Branch your Executor code must move the Forth interpreter
 pointer (IP) past the branch instruction and the address of the executor to get
-to the list of code pointers in the word.
+to the list of code pointers in the word and make that address the interpreter
+pointer. (IP)
 
 A symbolic view of a DTC Forth word looks like this:
 
-`<header> <B @DOCOL> <code-field><code-field> ...  <exit>`
+    <header> <B @DOCOL> <code-field><code-field> ...  <exit>
 
 In the TMS9900 CPU the <B @DOCOL> uses four bytes.
 The code for DOCOL in this case would be:
 
-`l: _docol     IP RPUSH,  \ push current IP onto R stack`
-
-`              IP 4 AI,   \ advance IP past the branching code`
-
-`              NEXT,      \ run the NEXT Forth word`
+``` 
+l: _docol   IP RPUSH,  \ push current IP onto R stack
+            IP 4 AI,   \ advance IP past the branching code 
+            NEXT,      \ run the NEXT Forth word
+ ```            
 
 In CAMEL99 DTC Forth we replace the Branch with Branch and LINK. (BL)
 
-`<header> <BL @DOCOL> <code-field> <code-field> ...  <exit>`
+    <header> <BL @DOCOL> <code-field> <code-field> ...  <exit>
 
 The BL instruction lets the CPU compute the new IP address for us and puts it in
 R11. This speeds up the DOCOL executor by replacing the addition with a faster
-register to register MOV instruction.
+and smaller, register to register MOV instruction.
 
-`l: _docol     IP RPUSH,`
-
-`              R11 IP MOV,`
-
-`              NEXT,`
+```
+l: _docol    IP RPUSH,
+             R11 IP MOV,
+             NEXT,
+```
 
 (  It might be possible to improve this further by making R11 the Forth IP.
   This would require extra overhead however to push/pop R11 for all native

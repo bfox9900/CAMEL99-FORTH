@@ -1,5 +1,4 @@
 \ C R O S S   C O M P I L E R   W O R D   " C R E A T O R S "
-\ I add  the ':' to the cross-compiler creating words just so I can remember what's what.
 
 \ create DTC macros that will be compiled into FORTH words
 CR .( DTC macros )
