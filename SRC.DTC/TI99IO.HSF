@@ -116,9 +116,22 @@ CODE VWRITE  ( RAM-addr VDP-addr cnt -- )
            TOS POP,            \ refill top of stack cache register
            NEXT,               \ return to Forth
            ENDCODE
-
+PAOWFROAIJR;F
 CODE VC! ( char vaddr --)
-          WMODE @@ BL,
+-1 [IF]
+           WMODE @@ BL,
+
+[ELSE]
+\ ----------------------
+\  *NEW* inline address setter
+           TOS 4000 ORI,
+           R1 STWP,           \ avoids 2 SWPB instructions
+           R3 8C02 LI,
+           0 LIMI,
+           9 (R1) *R3 MOVB,   \ write odd byte from TOS (ie: R4)
+           TOS *R3 MOV,       \ MOV writes the even byte to the port address
+\ --------------------------
+[THEN]
           TOS POP,
           9 (R1) VDPWD @@ MOVB,  \ Odd byte R4, write to screen
           TOS POP,               \ refill TOS

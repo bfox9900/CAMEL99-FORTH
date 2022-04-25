@@ -229,9 +229,6 @@ CODE [      ( -- ) STATE @@ CLR,  NEXT, ENDCODE  XIMMEDIATE
 
 : DEPTH     ( -- n ) SP0 SP@ 2+ - 2/ ;
 
-\    ******  SPECIAL FOR DTC. Advance by 4 CELLS ****************
-CODE >BODY ( cfa -- pfa) *TOS+ *TOS+ MOV, NEXT, END-CODE
-
 \ ======================================================================
 \ PAB base address
 \ : VDPTOP  ( -- n) 8370 @ 2- ;
@@ -818,12 +815,13 @@ TARGET-COMPILING
 \ //////////////////////////////////////////////////////////////////////
 \ ======================================================================
 \ D O E S   S U P P O R T
-: (;CODE) ( -- )  R> LATEST @ NFA>CFA 2+ !  ; \ CFA is after the BL instruction
+\ Need the CODE address, after the BL instruction. CFA 2+
+: (;CODE) ( -- )  R> LATEST @ NFA>CFA 2+ !  ;
 
 : DOES>    ( -- )
            COMPILE (;CODE)
-            0460 , _DODOES ,    \ *BRANCH* to  _DODOES (cannot BL this or we lose R11 value)
-           ; XIMMEDIATE
+           0460 , _DODOES ,    \ *BRANCH* to  _DODOES (cannot BL this or we lose R11 value)
+; XIMMEDIATE
 
 \ ======================================================================
 \ LOOPS AND BRANCH COMPILERS FOR THE TI-99 SYSTEM

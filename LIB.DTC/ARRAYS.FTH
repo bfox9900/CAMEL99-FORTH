@@ -1,33 +1,32 @@
 \ Traditional Forth array words
 
-\ These work as expected but are a litte slow due to DOES> overhead
+\ These versions have replaced DOES> with ;CODE for more speed
+INCLUDE DSK1.ASM99DTC
+INCLUDE DSK1.TOOLS
 
 \ CARRAY  creates a byte size array.
-: CARRAY ( n -- )
-         CREATE  ALLOT  DOES> ( n -- a )  + ;
-
+HEX
+: CARRAY ( n -- addr)
+         CREATE  ALLOT
+         ;CODE
+          R11 TOS ADD,
+          NEXT,
+        ENDCODE
 
 \ ARRAY  creates a cell size array.
-: ARRAY ( n -- )
-         CREATE  CELLS ALLOT  DOES> ( n -- a ) SWAP CELLS + ;
+: ARRAY ( n -- addr)
+         CREATE  CELLS ALLOT
+         ;CODE
+          TOS 1 SLA,  ( 2* ie: CELLS )
+          R11 TOS ADD,
+          NEXT,
+        ENDCODE
 
-\ 100 ARRAY ]Q
+ 100 ARRAY ]Q
+ 100 CARRAY ]X
 
-\ ALTERNATIVE Method: array operators
-: []    ( ndx  addr -- addr[n]) SWAP CELLS + ;
-: []@   ( ndx addr -- n') [] @ ;
-: []!   ( n ndx addr -- ) [] ! ;
+ : FILLQ  100 0 DO I I ]Q ! LOOP ;
+ : FILLX  100 0 DO I I ]X C! LOOP ;
 
-\ Usage examples
-\ CREATE Q  200 CELLS ALLOT
-\ 99 0  Q []!
-\  Q []@  .
-
-\ fastest Forth method: specific array operation
-\ : ]Q ( n -- addr )  CELLS Q + ;
-
-\ Usage examples
-\ 99 6 ]Q !
-\ 6 ]Q @ .
-
-
+ : SEEQ   100 0 DO I ]Q @ . LOOP ;
+ : SEEX   100 0 DO I ]X C@ . LOOP ;
