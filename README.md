@@ -85,11 +85,9 @@ A symbolic view of a DTC Forth word looks like this:
 In the TMS9900 CPU the <B @DOCOL> uses four bytes.
 The code for DOCOL in this case would be:
 
-`l: _docol    IP RPUSH,  \ push current IP onto R stack`
-
-`             IP 4 AI,   \ advance IP past the branching code`
-
-`             NEXT,      \ run the NEXT Forth word`
+`l: _docol    IP RPUSH,  \ push current IP onto R stack
+              IP 4 AI,   \ advance IP past the branching code
+              NEXT,      \ run the NEXT Forth word`
 
 In CAMEL99 DTC Forth we replace the Branch with Branch and LINK. (BL)
 
@@ -99,11 +97,9 @@ The BL instruction lets the CPU compute the new IP address for us and puts it in
 R11. This speeds up the DOCOL executor by replacing the addition with a faster
 register to register MOV instruction.
 
-`l: _docol     IP RPUSH,`
-
-`              R11 IP MOV,`
-
-`              NEXT,`
+`l: _docol     IP RPUSH,
+               R11 IP MOV,
+               NEXT,`
 
 (  It might be possible to improve this further by making R11 the Forth IP.
   This would require extra overhead however to push/pop R11 for all native
