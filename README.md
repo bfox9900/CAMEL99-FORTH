@@ -85,11 +85,11 @@ A symbolic view of a DTC Forth word looks like this:
 In the TMS9900 CPU the <B @DOCOL> uses four bytes.
 The code for DOCOL in this case would be:
 
-`l: _docol     IP RPUSH,  \ push current IP onto R stack`
+`l: _docol    IP RPUSH,  \ push current IP onto R stack`
 
-`              IP 4 AI,   \ advance IP past the branching code`
+`             IP 4 AI,   \ advance IP past the branching code`
 
-`              NEXT,      \ run the NEXT Forth word`
+`             NEXT,      \ run the NEXT Forth word`
 
 In CAMEL99 DTC Forth we replace the Branch with Branch and LINK. (BL)
 
