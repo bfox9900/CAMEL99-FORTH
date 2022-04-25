@@ -36,30 +36,29 @@ for the earlier ITC system and the SYSTEMDTC is for the DTC system.
 ```
 \ V1.0 START file loads ANS Forth extensions
   S" DSK1.ISOLOOPS" INCLUDED
-  S" DSK1.SYSTEMDTC" INCLUDED
-  S" DSK1.HSPRIMS  ( cae be removed to save space)
+  S" DSK1.SYSTEMDTC" INCLUDED ( for DTC this has loops and branching)
+  S" DSK1.HSPRIMS" INCLUDED   ( can be removed to save space)
   DECIMAL
 ``` 
 
 ### Using FAST-RAM Primitives
-Some of the common primitives use by Forth are copied into the tiny 16-bit RAM in the TI-99 console.  To give the compiler access to these primitives use:
+Some of the common primitives use by Forth are copied into the tiny 16-bit RAM in the TI-99 console.  
+To give the compiler access to these primitives the START file include the file: DSK1.HSPRIMS
+There is lower percentage of performance enhancement with this TI-99 trick than in ITC Forth because 
+the underlying DTC architecture is faster.
 
-```
-INCLUDE DSK1.HSPRIMS
-```
+HSPRIMS loads STATE smart compiling versions of the following words.
+They and may act weird if used in "creative" ways. You are warned.
 
-In your code or add that line to the START file if you always want them used.
-These are STATE smart compiling words and may act weird if used in "creative"
-ways.
-The words affected are:
+The words affected by HSPRIMS are:
 - @
 - !
 - DUP
 - DROP
 - '+'
 
-Using the 16 bit primitives only improves benchmarks that make heavy use of
-these primitives. Normal speed increases on the order of 1..2%.
+Using the 16 bit primitives can improve benchmarks that make heavy use of
+these primitives. Normal speed increases are on the order of 1..2%.
 
 ## Implementation Details for Forth Nerds
 In a DTC Forth each CODE word has only the dictionary header followed by the
