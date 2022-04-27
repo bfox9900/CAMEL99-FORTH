@@ -1,5 +1,5 @@
 \ ===========================================================================
-\  TMS9900  F O R T H   V I R T U A L   M A C H I N E   D E F I N I T I O N S
+\  T M S 9 9 0 0   D T C  F O R T H   V I R T U A L   M A C H I N E
 \ ===========================================================================
 
 \ Define the FORTH virtual machine registers in terms of the TARGET machine registers
@@ -37,7 +37,7 @@ CROSS-COMPILING     \ these words will extend the functionality of the Cross-Ass
 : *NEXT         *R10 ;   \ we only use indirect addressing for this one
 
 
-\ Create MACROs for Forth operations to simplify the code
+\ Create MAC ROs for Forth operations to simplify the code
 : IP++         IP INCT, ;
 
 : RP++         RP INCT, ;
@@ -50,8 +50,8 @@ CROSS-COMPILING     \ these words will extend the functionality of the Cross-Ass
 : PUSH,         ( src -- )  SP DECT,  *SP   MOV, ;    \ 10+18 = 28  cycles
 : POP,          ( dst -- )  *SP+      SWAP  MOV, ;    \ 22 cycles
 
-: DUP,   TOS PUSH, ;
-: DROP,  TOS POP,  ;
+: DUP,          TOS PUSH, ;
+: DROP,          TOS POP,  ;
 
 : RPUSH,        ( src -- ) RP DECT,  *RP   MOV,  ;  \ 6 bytes
 : RPOP,         ( dst -- ) *RP+      SWAP  MOV,  ;  \ 2 bytes
@@ -80,20 +80,29 @@ CROSS-COMPILING     \ these words will extend the functionality of the Cross-Ass
 \ =========================================================================
 \ This is that macro that runs at the end of CAMEL99 code words
 \ It is equivalent to "return" for a Forth system
+\ We can Branch to the code in 16bit RAM or compile it inline.
 
-: JMP-NEXT       ( -- ) *NEXT B, ;     \ this is 4 bytes, 12 cycles
+: JMP-NEXT  ( -- )   *NEXT B, ;               \ 4 bytes
+
+\ INLINE NEXT
+\ Although the code for DTC NEXT resides in 16 bit-RAM we access it via a
+\ branch through R10. This adds and 16 cycles to NEXT.
+: IL-NEXT   ( --- )  *IP+ W MOV,  *W B, ;    \ 8 bytes
 
 \ ==========================================================================
 \ RESOLVE NEXT, a deferred word
-
 \ NEXT, is a deferred word in the cross-assembler so you can create different
 \ threading mechanisms with the Cross-assembler easily.
-
 \ We must assign an Execution token to "NEXT," so all the subsequent
-\ CODE: words in 9900CODE.HSF will compile the correct code.
+\ CODE words will end with the correct code.
 
- ' JMP-NEXT IS NEXT,         \ meaning: Find execution address of JMP-NEXT
-                             \          and put into NEXT,
+SMALLER
+[IF]
+  ' JMP-NEXT IS NEXT,         \ Assign JMP-NEXT to NEXT,
+[ELSE]
+  ' IL-NEXT IS NEXT,
+ [THEN]
+
 
 \ ==========================================================================
 \ debugging macro.   Stops machine code in place

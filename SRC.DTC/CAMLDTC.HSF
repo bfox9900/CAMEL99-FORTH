@@ -1,5 +1,5 @@
-\ CAMEL99 Forth for the TI-99  un-optimized  version  11Apr2019
-\ Copyright (c) 2018 Brian Fox
+\ CAMEL99 Forth for TI-99, DIRECT THREADED VERSION  27apr2022 Brian Fox
+\ Copyright (c) 2022 Brian Fox
 \ KILWORTH Ontario Canada
 \ brian.fox@brianfox.ca
 
@@ -24,8 +24,8 @@
 \ ===================[ COMPILER CONTROL VALUES ]======================
 CROSS-COMPILING
 
-FALSE VALUE HASHING
-A000  VALUE KERNORG
+A000  VALUE KERNORG  \ A000 for expansion RAM, 6000 for SuperCart RAM
+TRUE  VALUE SMALLER  \ T= NEXT branches through R10,  F= inline NEXT (too big)
 
 \ ======================================================================
 \ M E M O R Y   U S A G E   D E F I N I T I O N S
@@ -51,22 +51,14 @@ HEX
 
 [CC] cr .( Compile Forth Assembler primitives ...)
 
-[CC] INCLUDE CC9900\SRC.DTC\9900DTBL.HSF   \ direct threaded primitives using BL instruction
-[CC] INCLUDE CC9900\SRC.ITC\TI99IO.HSF    \ VDP & KEY code
-
-\ ======================================================================
-\ T A R G E T   D E - C O M P I L E R
-\ debugging tool used to examine cross-compiler output
-
-CROSS-COMPILING
-FALSE [IF]   INCLUDE CC9900\SRC.ITC\TSEE.HSF   [THEN]
+[CC] INCLUDE CC9900\SRC.DTC\9900DTBL.HSF   \ direct threaded using BL
+[CC] INCLUDE CC9900\SRC.DTC\TI99IOX.HSF    \ VDP & KEY code
 
 \ ======================================================================
 \ C R O S S   C O M P I L E R   B O O T - S T R A P P I N G
 \ add loop and branch words to the cross-compiler (not the TARGET)
 
-CROSS-COMPILING
-INCLUDE CC9900\SRC.DTC\BOOTSTRX.HSF
+[CC] INCLUDE CC9900\SRC.DTC\BOOTSTRX.HSF
 
 TARGET-COMPILING
 
@@ -78,20 +70,19 @@ TARGET-COMPILING
 \ S Y S T E M   C O N S T A N T S
 
 [CC] HEX
-cr .( Constants and VARIABLEs...)
+CR .( Constants and VARIABLEs...)
 
 TARGET-COMPILING
 
   'SP0  CONSTANT SP0    \ ^^^  data stack, 28 cells deep,
   'RP0  CONSTANT RP0    \ ^^^ Return stack 96 cells max, shares space with TIB
-  'TIB  CONSTANT TIB   \ tib grows up towards RP0. Never more that
+  'TIB  CONSTANT TIB    \ tib grows up towards RP0. Never more that
 
 \ Utility constants
         0 CONSTANT FALSE
        -1 CONSTANT TRUE
         0 CONSTANT 0
         1 CONSTANT 1
-\        2 CONSTANT 2
        20 CONSTANT BL
 
 \ ======================================================================
@@ -116,26 +107,16 @@ TARGET-COMPILING
 \      38 USER 'EMIT    \ for vectored char output
       3A USER LP
       3C USER SOURCE-ID
-      3E USER 'SOURCE
+      3E USER 'SOURCE    \ Source is a 2VARIABLE
 \      40 USER -------   \ used by 'SOURCE
 
       46 USER TPAD
-\     7E USER VPG        \ declared in TI99 VDP driver code
 
 \ TI-99 system memory locations
 \  8374 CONSTANT KUNIT#  \ byte
 \  837C CONSTANT GPLSTAT \ byte
 
-\ initial vocabulary with 4 threads
-HASHING [IF]
-
-  4 CONSTANT #THREADS
-  VARIABLE LATEST  [CC] 4 CELLS TALLOT  [TC]
-
-[ELSE]
   VARIABLE LATEST
-
-[THEN]
 
 \ *G These system VARIABLEs control cold starting the system
 VARIABLE ORGDP
@@ -147,14 +128,15 @@ VARIABLE BOOT
 
 [CC] HEX [TC]
 VARIABLE VMODE
-VARIABLE L0  [CC] 5 CELLS TALLOT  [TC]
+VARIABLE L0  [CC]  6 CELLS TALLOT  [TC]
+VARIABLE LP
 VARIABLE ^PAB
 VARIABLE LINES
 VARIABLE C/SCR
 VARIABLE 'IV    \ *G interpretor vector. Hold address of <INTERPRET>
 VARIABLE H
 VARIABLE VP
-VARIABLE CURS     [CC] 205F CURS T! [TC]  \ BLANK and '_' in one VARIABLE
+VARIABLE CURS   [CC] 205F CURS T! [TC]  \ BLANK and '_' in one VARIABLE
 VARIABLE VTOP
 
 \ Special Assembler labels, converted to FORTH constants
@@ -163,10 +145,12 @@ VARIABLE VTOP
   _DOVAR   CONSTANT _DOVAR
   _DOUSER  CONSTANT _DOUSER
   _DODOES  CONSTANT _DODOES
+
   _BRANCH >HSRAM  CONSTANT _HSBRANCH
   _?BRANCH >HSRAM CONSTANT _?HSBRANCH
   _EXIT   >HSRAM  CONSTANT _HSEXIT
   _LIT    >HSRAM  CONSTANT _HSLIT
+
   _@      >HSRAM  CONSTANT _HS@
   _!      >HSRAM  CONSTANT _HS!
   _DROP   >HSRAM  CONSTANT _HSDROP
@@ -194,38 +178,49 @@ CODE ALLOT  ( n --)  \ : ALLOT     ( n --)   DP +! ;
       R1 STWP,
       TOS 24 (R1) ADD,
       TOS POP,
-      NEXT,
+     NEXT,
 ENDCODE
-CODE ,  ( n --)  \ : ,  ( n -- ) HERE ! 2 ALLOT ;
+
+0 [IF]
+   : ,   ( n -- ) HERE ! 2 ALLOT ;
+
+[else]
+   CODE ,  ( n --)
       R1 STWP,
       24 (R1) R2 MOV,
       TOS *R2 MOV,
       24 (R1) INCT,
       TOS POP,
-      NEXT,
- ENDCODE
+     NEXT,
+   ENDCODE
+[THEN]
 
-CODE C, ( c --)  \ : C,  ( n -- ) HERE C! 1 ALLOT  ;
+0 [IF]
+: C,  ( n -- ) HERE C! 1 ALLOT ;
+
+[ELSE]
+   CODE C, ( c --)
       TOS SWPB,
       R1 STWP,
       24 (R1) R2 MOV,
       TOS *R2 MOVB,
       24 (R1) INC,
       TOS POP,
-      NEXT,
- ENDCODE
+     NEXT,
+   ENDCODE
+[THEN]
 
 : COMPILE,  ( n -- )  , ;
 : ALIGN     ( -- )   HERE ALIGNED DP ! ;
 : PAD       ( -- addr) HERE TPAD @ + ;
-: COMPILE   ( -- )  R> DUP 2+ >R @ COMPILE, ;  \ ITC VERSION
-: IMMEDIATE ( --)  01 LATEST @ 1-  C! ;
-: LITERAL ( n -- n|~) STATE @ IF _HSLIT ,  ,  THEN ;  XIMMEDIATE
+: COMPILE   ( -- ) R> DUP 2+ >R @ COMPILE, ;  \ DTC/ITC Version
+: IMMEDIATE ( -- ) 01 LATEST @ 1-  C! ;
+: LITERAL   ( n -- n|~) STATE @ IF _HSLIT ,  ,  THEN ;  XIMMEDIATE
 
 \ : ]       STATE ON ;
 CODE ]      ( -- ) STATE @@ SETO, NEXT, ENDCODE
 \ : [       STATE OFF ; XIMMEDIATE
-CODE [      ( -- ) STATE @@ CLR,  NEXT, ENDCODE  XIMMEDIATE
+CODE [      ( -- ) STATE @@ CLR, NEXT, ENDCODE  XIMMEDIATE
 
 : DEPTH     ( -- n ) SP0 SP@ 2+ - 2/ ;
 
@@ -239,7 +234,7 @@ CODE VDPTOP   TOS PUSH,  8370 @@ TOS MOV,  TOS DECT, NEXT, END-CODE
 [CC] cr .( Stack primitives ...)  [tc]
 
 \  : TUCK  SWAP OVER ;
- CODE TUCK  ( w1 w2 --  w2 w1 w2 ) \ same size as DTC Forth
+CODE TUCK  ( w1 w2 --  w2 w1 w2 ) \ same size as DTC Forth
         *SP   R1 MOV,
          TOS *SP MOV,
               R1 PUSH,
@@ -285,7 +280,6 @@ CODE WITHIN   ( n  lo  hi -- flag )
          NC IF,  TOS SETO, ENDIF,
          NEXT,
          ENDCODE  \ 2 bytes bigger than Forth
-[THEN]
 
 \ CODE HALT    BEGIN, AGAIN, ENDCODE \ debug break
 
@@ -322,8 +316,7 @@ CODE /STRING ( c-addr1 u1 n -- c-addr2 u2 ) \ ~20uS!!       Clks
 \ H E A D E R   N A V I G A T I O N
 
 TARGET-COMPILING
-\ : NFA>LFA       ( nfa -- lfa)  3 - ;
- CODE NFA>LFA    TOS -3 ADDI, NEXT, ENDCODE  ( faster, same size)
+CODE NFA>LFA    TOS -3 ADDI, NEXT, ENDCODE
 
 \ Changed 7F to 1F . 31 character max name length. Other bits for future use
 : NFA>CFA       ( nfa -- cfa ) COUNT  1F AND + ALIGNED ;
@@ -332,11 +325,14 @@ TARGET-COMPILING
 : HIDE          ( -- )  LATEST @ ( nfa) DUP C@ 80 OR  SWAP C! ;
 : REVEAL        ( -- )  LATEST @ ( nfa) DUP C@ 7F AND SWAP C! ;
 
+\    **SPECIAL FOR DTC. Advance by 4 CELLS*
+CODE >BODY ( cfa -- pfa)  TOS 4 ADDI,  NEXT, END-CODE
+
 \ =====================================================================
 \ P A R S E   W O R D
 [CC] cr .( Parsing...)
-TARGET-COMPILING
 
+TARGET-COMPILING
 CODE DUP>R  ( n -- n) TOS RPUSH,  NEXT, ENDCODE  \ used 3 times
 
 : SOURCE   ( -- addr len) 'SOURCE 2@ ;
@@ -347,7 +343,6 @@ CODE DUP>R  ( n -- n) TOS RPUSH,  NEXT, ENDCODE  \ used 3 times
             OVER SWAP R>  SCAN >R
             OVER - DUP
             R> IF 1+ THEN  >IN +! ;
-
 
 : PARSE-WORD  ( char -- c-addr n)  \ Camel/BFox common factor for WORD
             DUP SOURCE >IN @ /STRING
@@ -374,27 +369,27 @@ CODE BASE@
          ENDCODE
 
 CODE DIGIT?   ( char -- n f )
-            TOS PUSH,          \  dup char
-            TOS -30 ADDI,      \  convert char to number
-            TOS 9 CMPI,
-            HI IF,
-               TOS -7 ADDI,
-               TOS 9 CMPI,
-               LO IF,
-                   TOS CLR,  \ bad result
-                   NEXT,
-               ENDIF,
-            ENDIF,
-            R1 STWP,       \ multi-tasking friendly
-            TOS 2A (R1) CMP, \ USER var 2A (BASE)
-            HE IF,
-               TOS CLR,    \ bad result
-               NEXT,
-            ENDIF,
-            TOS *SP MOV,   \ replace char with no.
-            TOS SETO,      \ set flag to true
-            NEXT,
-            ENDCODE        \ 4 bytes bigger than Forth, much faster
+          TOS PUSH,         \  dup char
+          TOS -30 ADDI,     \  convert char to number
+          TOS 9 CMPI,
+          HI IF,
+             TOS -7 ADDI,
+             TOS 9 CMPI,
+             LO IF,
+                 TOS CLR,  \ bad result
+                 NEXT,
+             ENDIF,
+          ENDIF,
+          R1 STWP,         \ multi-tasking friendly
+          TOS 2A (R1) CMP, \ USER var 2A (BASE)
+          HE IF,
+             TOS CLR,      \ bad result
+             NEXT,
+          ENDIF,
+          TOS *SP MOV,   \ replace char with no.
+          TOS SETO,      \ set flag to true
+          NEXT,
+          ENDCODE        \ 4 bytes bigger than Forth, much faster
 
 : UD*      ( ud1 u2 -- ud3) DUP>R * SWAP R> UM* ROT + ;
 
@@ -420,12 +415,12 @@ CODE DIGIT?   ( char -- n f )
 \ ======================================================================
 \ S I M P L E   S O U N D  I N T E R F A C E
 
-[CC] include cc9900\SRC.ITC\ticktock.hsf   \ hardware milli-second timer
+[CC] include cc9900\SRC.DTC\ticktock.hsf   \ hardware milli-second timer
 
 TARGET-COMPILING
 
 \ write a byte to address of TMS9919 chip
-CODE SND!   ( c -- )  TOS SWPB, TOS 8400 @@ MOVB, NEXT, ENDCODE
+CODE SND!   ( c -- )  TOS SWPB, TOS 8400 @@ MOVB,  TOS POP, NEXT, ENDCODE
 
 : BEEP     ( -- )
             80 SND! 5 SND!    \ pre-calculated values for OSC1 1390Hz
@@ -447,8 +442,8 @@ CODE SND!   ( c -- )  TOS SWPB, TOS 8400 @@ MOVB, NEXT, ENDCODE
 HEX [TC]
 
 : C/L!   ( c/l -- )  \ pronounced "SEE-PER-ELL-STORE"
-           DUP C/L !           \ set chars per line
-           L/SCR *  C/SCR ! ;  \ calc. chars per screen
+         DUP C/L !           \ set chars per line
+         L/SCR *  C/SCR ! ;  \ calc. chars per screen
 
 : VPOS   ( -- vaddr) VROW 2@ >VPOS ;
 : VPUT   ( char -- ) VPOS VC! ;
@@ -511,7 +506,7 @@ CODE LASTLN ( -- vaddr)
 \ ======================================================================
 \ S T R I N G   L I T E R A L S
 [cc] HEX [tc]
-\ run-time action of S"   (For ITC Forth only)
+\ run-time action of S"
 : (S")    ( -- c-addr u) R>  COUNT  2DUP + ALIGNED  >R ;
 
 \ ======================================================================
@@ -568,7 +563,7 @@ CODE >DIGIT  ( n -- c) \ ASM is 9 bytes, 4X faster
             NEXT,
             ENDCODE
 
-: <#     ( --)   PAD HP ! ;
+: <#     ( --) PAD HP ! ;
 
  CODE HOLD  ( char -- )
  \ *G HOLD is CODE. 4 bytes bigger, 9% faster number output than Forth version.
@@ -606,7 +601,7 @@ CODE >DIGIT  ( n -- c) \ ASM is 9 bytes, 4X faster
 \ Q U I T :  The  O U T E R   I N T E R P R E T E R
 
 : QUIT     ( -- )
-           L0 LP !   RP0 RP!
+           RP0 RP!
            SOURCE-ID OFF
            t[COMPILE] [
            BEGIN
@@ -692,9 +687,7 @@ TARGET-COMPILING
           CONTEXT @ @ (FIND) ;
 
 VARIABLE 'FIND   \ *G vector for the action of find
-
-: FIND  ( -- )  'FIND PERFORM ;
-\ : FIND      CONTEXT @ @ (FIND) ;
+: FIND  ( -- ) 'FIND PERFORM ;
 
 : '        ( -- xt) BL WORD FIND 0= ?ERR ;
 : [']      ( -- <name> ) ?COMP  '  T[COMPILE] LITERAL ; XIMMEDIATE
@@ -721,7 +714,6 @@ VARIABLE 'FIND   \ *G vector for the action of find
 \ I N T E R P R E T E R  /  C O M P I L E R
 
 TARGET-COMPILING
--1 [IF]
 : <INTERP>  ( i*x c-addr u -- j*x )
          'SOURCE 2!  >IN OFF
           BEGIN
@@ -741,42 +733,27 @@ TARGET-COMPILING
               DEPTH 0< TS" Short stack" ?ABORT
           REPEAT
           DROP ;
-[ELSE]
-\ *** TESTING VERSION ***
-: <INTERP>  ( i*x c-addr u -- j*x )
-                   'SOURCE 2!  >IN OFF
-                    BEGIN
-                        BL WORD
-                        DUP C@  ( -- addr len)
-                    WHILE
-                        CR DUP COUNT 2DUP SWAP U. U. TYPE
-                           FIND ?DUP IF EXECUTE ELSE DROP THEN
-
-                        CR DEPTH DUP . 0< TS" Short stack" ?ABORT
-                    REPEAT
-                    DROP ;
-[THEN]
 
 \ ======================================================================
 \ T I - 9 9   T E X T   M O D E   C O N T R O L
 TARGET-COMPILING
 
 : TEXT    ( -- )
-             F0 DUP 83D4 C!
+            F0 DUP 83D4 C!
        ( -- F0) 01 VWTR
               0  2 VWTR  \ set VDP screen page
                VTOP OFF  \ topline VDP offset
                VPG  OFF  \ VDP screen page offset
              12  7 VWTR  \ sets FG & BG color
                 28 C/L!
-                 2 VMODE !   \ 2=ID for 40 column "TEXT" mode
-             PAGE ;
+              2 VMODE !  \ 2=ID for 40 column "TEXT" mode
+                PAGE ;
 
 \ ======================================================================
 \ TI-99 F I L E   S Y S T E M   I N T E R F A C E
 
- [CC] include CC9900\SRC.ITC\dsrlinkA.hsf
- [CC] include CC9900\SRC.ITC\filesyX2.hsf
+ [CC] include CC9900\SRC.DTC\dsrlinkA.hsf
+ [CC] include CC9900\SRC.DTC\filesyX2.hsf
 
 \ ======================================================================
 \ D I C T I O N A R Y   C R E A T I O N
@@ -793,14 +770,14 @@ TARGET-COMPILING
 
 : HEADER    BL PARSE-WORD HEADER, ;
 
-\ ========================================================================
+\ =======================================================================
 \ T A R G E T   S Y S T E M   D E F I N I N G   W O R D S
 \ dtc requires that each word starts with a branch to its executor routine.
 
 ( 06A0  is  the BL @   machine instruction )
 \                   name-creator  runtime-action  parameter(s)
 \                   ------------  --------------  -----------
-: CONSTANT  ( n --)  HEADER      06A0 , _DOCON ,       , ;
+: CONSTANT  ( n --)  HEADER      06A0 , _DOCON  ,      , ;
 : USER      ( n --)  HEADER      06A0 , _DOUSER ,      , ;
 : CREATE    ( -- )   HEADER      06A0 , _DOVAR  ,        ;
 : VARIABLE  ( -- )   CREATE                          0 , ;
@@ -813,30 +790,27 @@ TARGET-COMPILING
 \ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 \  =====[ CANNOT DEFINE ANY CONSTANT, VARIABLE OR USER AFTER THIS ]=====
 \ //////////////////////////////////////////////////////////////////////
+
+
 \ ======================================================================
-\ D O E S   S U P P O R T
-\ Need the CODE address, after the BL instruction. CFA 2+
-: (;CODE) ( -- )  R> LATEST @ NFA>CFA 2+ !  ;
+\ D O E S   S U P P O R T  f o r  D T C  c o d e
+: (;CODE) ( -- )
+      R> LATEST @ NFA>CFA  \ DTC CFA is address of "BL @XXXX"
+      2+ ! ;               \ we add 1 cell to replace XXXX. Don't touch BL@
 
 : DOES>    ( -- )
-           COMPILE (;CODE)
-           0460 , _DODOES ,    \ *BRANCH* to  _DODOES (cannot BL this or we lose R11 value)
-; XIMMEDIATE
+      COMPILE (;CODE)
+      0460 , _DODOES , \ *BRANCH* to _DODOES (cannot BL or we lose R11 value)
+     ; XIMMEDIATE
 
 \ ======================================================================
 \ LOOPS AND BRANCH COMPILERS FOR THE TI-99 SYSTEM
-[CC] DECIMAL [TC]
+[CC] HEX [TC]
 
-\ ** changed to load at boot time from DSK1.ISOLOOPS
+\ MOVED most to load at boot time from DSK1.ISOLOOPS
 
-
-
-
-\ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-\  ===[ CANNOT COMPILE IF, ELSE, THEN, BEGIN UNTIL ETC. AFTER THIS ]===
-\ //////////////////////////////////////////////////////////////////////
 \ ======================================================================
-\ INIT: Set Workspace, copy code to scratch pad, set stacks, run BOOT
+\ COLD sets Workspace, copy code to scratch pad, set stacks, run BOOT
 
 [cc] HEX
 
@@ -851,8 +825,9 @@ CODE COLD
               EQ UNTIL,
               SP  SP0  LI,     \ data stack
               RP  RP0  LI,     \ return stack
-              R10 HSNEXT LI,   \ address of hs-speed NEXT to R10
-              IP   BOOT LI,    \ LOAD CFA of boot word. ie: the BL code
+              R10 HSNEXT LI,   \ address of hs-speed NEXT to R10.
+                               \ only used by a few primitives in DTC
+              IP   BOOT LI,    \ LOAD CFA of boot word. ie: BL code address
               NEXT,            \ run Forth (inner interpreter)
               ENDCODE
 
@@ -894,7 +869,7 @@ TARGET-COMPILING
 \              PAD PLACE
 \              PAD FIND SWAP U. U.
 
-\ =======================================================================
+\ ======================================================================
 \ B O O T  U P  C O D E
 
 [CC] KERNORG 6000 =
@@ -904,25 +879,27 @@ TARGET-COMPILING
 
 : WARM     ( -- )
 \ *G restarts Forth and loads DSK1.START
-              80 83C2 C!
-              26 TPAD !
-              1000 VP !
-              2000  H !
-              3FFF TMR!
-              VDPTOP ^PAB !
-             t['] <INTERP> 'IV !
-             T['] <FIND>  'FIND !
-              L0 LP !
-              SOURCE-ID OFF
-              ORGDP @ DP !
-              ORGLAST @ LATEST !
-              LATEST DUP CONTEXT ! CURRENT !
-              FLOOR ON
-              TEXT
-              VERSION TYPE
-              HEX
-              TS" DSK1.START" INCLUDED
-              ABORT
+          80 83C2 C!
+          26 TPAD !
+          1000 VP !
+          2000  H !
+          3FFF TMR!
+          VDPTOP ^PAB !
+          L0 LP !
+          FLOOR ON
+          SOURCE-ID OFF
+
+         t['] <INTERP> 'IV !
+         T['] <FIND>  'FIND !
+          L0 LP !
+          ORGDP @ DP !
+          ORGLAST @ LATEST !
+          LATEST DUP CONTEXT ! CURRENT !
+          TEXT
+          VERSION TYPE
+          HEX
+          TS" DSK1.START" INCLUDED
+          ABORT
 ;
 
 \ ======================================================================
@@ -939,7 +916,7 @@ TARGET-COMPILING
 TARGET-COMPILING
  X: :         !CSP  HEADER (:NONAME)  ;X
  X: :NONAME   HERE  !CSP   (:NONAME)  ;X
- X: ;     [  REVEAL COMPILE EXIT ?CSP ;X  XIMMEDIATE
+ X: ;     [  REVEAL  _HSEXIT ,  ?CSP  ;X  XIMMEDIATE
 
 [CC]
 \           F O R T H   S Y S T E M   C O D E   E N D S
@@ -973,7 +950,7 @@ KERNORG 6000 =
 
          T' WARM BOOT T!
 
-        END.   ( report compile time and stats)
+        END. ( report compile time and stats)
 
 \ ======================================================================
 \ S A V E   B I N A R Y  I M A G E   F I L E

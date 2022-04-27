@@ -70,19 +70,15 @@
 \ R5      Temp for NEXT, overflow for '*' and '/',  general purpose register
 \ R6      parameter stack pointer
 \ R7      return stack pointer
-\ R8      general purpose register
+\ R8      general purpose register "working register" ( Alias:  W *W (W) )
 \ R9      Forth VM Instruction pointer
-\ R10     Forth's "NEXT" routine cache
+\ R10     Forth's HI-SPEED "NEXT" routine cache
 \ R11     Contains PFA when calling Forth word, OR sub-routine return register
 \ R12     9900 CRU register  - OR - general purpose register
 \ R13     Multi-tasker LINK to next task
 \ R14     Multi-tasker Program counter: holds address of TSTAT routine see: TASKS99.HSF
 \ R15     Multi-tasker task Status register
 
-\  [UNDEFINED] XASSEMBLER
-\  [IF]   include cc9900\asm99003.hsf
-\  [ELSE] CR .( ** 9900 XASSEMBLER is loaded **)
-\  [THEN]
 
 \ ==============================================================
 \ F O R T H   V I R T U A L   M A C H I N E  S U P P O R T
@@ -108,10 +104,10 @@ CROSS-COMPILING
 cr ." Assembling Forth Primitives"
 
 TARGET-COMPILING
-              START.                \ sets a timer
-              NEW.                  \ init target memory segment to FFFF
-              A000 ORIGIN. \ we must set the origin before TI-99.EA5 directive
-              TI-99.EA5             \ format the memory/file header for TI-99 EA5 file format
+              START.           \ sets a timer
+              NEW.             \ init target memory segment to FFFF
+              KERNORG ORIGIN.  \ set the origin before TI-99.EA5 directive
+              TI-99.EA5        \ format the memory/file header for TI-99 EA5 file format
 
 \ ==============================================================
 \ Compiler extensions to manage copying certain primitives into hi-speed (HS) RAM
@@ -140,10 +136,13 @@ TARGET-COMPILING
 \
 
 TARGET-COMPILING
+
+\ This code is copied into Scratchpad RAM at >8388..>83BF.
+\ There is no room for more!
 l: _exit     *RP+ IP MOV,
 l: _next*
-@@9:         *IP+ W MOV,
-                 *W B,
+@@9:         *IP+ R5 MOV,
+                 *R5 B,
 
  l: _?branch
               TOS DEC,
@@ -157,6 +156,7 @@ l: _next*
 l: _docol     IP RPUSH,
               R11 IP MOV,
               @@9 JMP,
+
 l: _lit       TOS     PUSH,
              *IP+ TOS MOV,
               @@9 JMP,
@@ -164,16 +164,15 @@ l: _lit       TOS     PUSH,
 l: _@        *R4 R4 MOV,
               @@9 JMP,
 
-l: _!        *SP+ *TOS MOV,
-
-L: _DROP      TOS POP,
+ l: _!       *SP+ *TOS MOV,
+ L: _DROP     TOS POP,
               @@9 JMP,
 
 l: _DUP      TOS PUSH,
-             @@9 JMP,
+              @@9 JMP,
 
 l: _PLUS    *SP+ TOS ADD,
-             @@9 JMP,
+              @@9 JMP,
 
 l: _HSend   \ this label tells the compiler where the high speed code ends.
 
@@ -188,8 +187,8 @@ l: _HSend   \ this label tells the compiler where the high speed code ends.
  _HSend   >HSRAM equ HSend   \ end of hi-speed memory code. Needed by copy loop in INIT
  _DUP   >HSRAM equ HSDUP
  _LIT   >HSRAM EQU HSLIT
- _@     >HSRAM EQU HS@
- _PLUS  >HSRAM EQU HSPLUS
+\ _@     >HSRAM EQU HS@
+\ _PLUS  >HSRAM EQU HSPLUS
 
 
 [TC]
@@ -250,11 +249,11 @@ _douser  RESOLVES 'DOUSER  \ 'DOUSER is used by the cross-compiler
 \   easy peasy :-)
 l: _DODOES  ( -- a-addr)
             TOS PUSH,       \ save TOS reg on data stack
-            R11 TOS MOV,    \ After BL R11 has defined word's PFA. Move to TOS
+            R11 TOS MOV,    \ After BL, R11 has defined word's PFA. Move to TOS
             IP  RPUSH,      \ save current IP on return stack
-\ ** R11-2 points to defining word CODE B @@ _dodoes
-           -2 (R11) IP MOV, \ move pointer to Forth IP
-            IP  4 ADDI,     \ advance past branch to defining word's PFA
+\ ** R11-2 points to defined word's CFA (CODE B @@ _dodoes)
+           -2 (R11) IP MOV, \ CFA to Forth IP
+            IP  4 ADDI,     \ cfa>pfa of the defined word.
             NEXT,
 
 
@@ -262,33 +261,12 @@ l: _DODOES  ( -- a-addr)
 [CC] CR .( FORTH PRIMITIVES BEGIN) [TC]
 
 
-\ BANDAID*  Just branch to the high speed versions.
-\ should be compiler words that compile the HI SPEED address into defs.
+CROSS-COMPILING  \ NOTE: These extend the compiler NOT the target
+\ compile hi-speed addresses into definitions
+: ?BRANCH  _?branch >HSRAM T, ; IMMEDIATE
+: BRANCH   _branch  >HSRAM T, ; IMMEDIATE
 
 TARGET-COMPILING
-\ CODE EXIT    ( -- )  'EXIT @@ B, ENDCODE
-\ CODE BRANCH  ( -- )  _BRANCH >HSRAM @@ B, ENDCODE
-\ CODE ?BRANCH ( -- )  _?BRANCH >HSRAM @@ B, ENDCODE
-0 [IF]
-TARGET-COMPILING
-    CODE ?BRANCH
-             TOS DEC,
-             TOS POP,
-             @@2 JOC,
-    +CODE BRANCH
-             *IP IP ADD,
-             NEXT,
-@@2:         IP INCT,
-             NEXT,
-     ENDCODE
-
-[ELSE]
-    \ compile hi-speed addresses into definitions
-    CROSS-COMPILING
-    : ?BRANCH  _?branch >HSRAM T, ; IMMEDIATE
-    : BRANCH   _branch  >HSRAM T, ; IMMEDIATE
-[THEN]
-
 CODE EXIT
    *RP+ IP MOV,
    *IP+ W MOV,
@@ -316,14 +294,14 @@ ENDCODE
 
 [CC] CR .( MEMORY FETCH & STORE) [TC]
 CODE !      ( n addr -- )
-             *SP+ *TOS MOV,   \ 20
-              TOS POP,        \ 22
-              NEXT,           \ 42
+             *SP+ *TOS MOV,
+              TOS POP,
+              NEXT,
               ENDCODE
 
 CODE @      ( a -- w )
              *TOS TOS MOV,   \ 18
-              next,
+              NEXT,
               ENDCODE
 
 \ Aug 4 2018: fixed order of data to be ANS compliant
@@ -425,13 +403,13 @@ CODE R@      ( -- w )
 CODE SP@     ( -- a )
               TOS PUSH,
               SP TOS MOV,
-              NEXT,
+             NEXT,
               ENDCODE
 
 CODE SP!     ( a -- )
               TOS SP MOV,
               TOS POP,
-              NEXT,
+             NEXT,
               ENDCODE
 
 CODE DROP    ( w -- )
@@ -446,11 +424,13 @@ CODE NIP     ( n n' -- n')
 
 CODE ?DUP    ( x -- 0 | x x)       \ ?DUP interleaved with DUP to save space
               TOS TOS MOV,          \ test for TOS<>0
-              @@1 JNE,              \ if TOS<>0 goto DUP
-              NEXT,                 \ goto next word
-+CODE DUP    ( w -- w w )          \ create a Forth Header for DUP
-@@1:          TOS PUSH,
-              next,
+              NE IF, TOS PUSH, ENDIF,
+              NEXT,
+              ENDCODE
+
+CODE DUP    ( w -- w w )           \ create a Forth Header for DUP
+              TOS PUSH,
+              NEXT,
               ENDCODE
 
 CODE SWAP    ( w1 w2 -- w2 w1 )
@@ -463,7 +443,7 @@ CODE SWAP    ( w1 w2 -- w2 w1 )
 CODE OVER   ( w1 w2 -- w1 w2 w1 )
               TOS PUSH,             \ 28
               2 (SP) TOS MOV,       \ 22
-              next,               \ 50
+              NEXT,                 \ 50
               ENDCODE
 
 CODE ROT    ( n1 n2 n3 --  n2 n3 n1)
@@ -501,8 +481,8 @@ CODE 2DROP   ( n n -- )
              *SP W MOV,            \ 18 copy n1
               TOS PUSH,            \ 28 copy n2 onto stack
               W PUSH,              \ 28 push onto Stack
-              NEXT,                \
-             ENDCODE             \ 74,  5 instructions, 10 bytes
+             NEXT,                \
+             ENDCODE               \ 74,  5 instructions, 10 bytes
 [ELSE]
 \ faster version is 2 bytes bigger. It's hard to win with the 9900!
 CODE 2DUP   ( n1 n2 -- n1 n2 n1 n2 )
@@ -527,7 +507,7 @@ CODE PICK   ( n -- n)   \ GForth ITC takes 8 intel instructions for PICK
               TOS TOS ADD,   \ 14  (" n CELLS")
               SP TOS ADD,    \ 14
              *TOS TOS MOV,   \ 18
-              NEXT,         \  46
+             NEXT,         \  46
               ENDCODE
 
 0 [IF] \ From Wil Baden's TOOLBELT  Thanks Wil. RIP
@@ -535,13 +515,13 @@ CODE PICK   ( n -- n)   \ GForth ITC takes 8 intel instructions for PICK
 CODE 3RD  ( a b c d --  a b c d b)    \ 2X faster than 3 PICK
               TOS PUSH,         \ 28
               4 (SP) TOS MOV,   \ 22
-              NEXT,            \  50
+             NEXT,            \  50
               ENDCODE
 
  CODE 4TH
               TOS PUSH,
               6 (SP) TOS MOV,
-              NEXT,
+             NEXT,
               ENDCODE
 [THEN]
 
@@ -781,43 +761,55 @@ CODE M/MOD  ( lsb msb n3 -- rem quot)
 \ ===================================================================
 [CC] CR  .( COMPARISON) [TC]
 
-CODE 0=     ( n -- ? )
-              TOS TOS MOV,
-              @@7 JMP,
-+CODE =     ( n n -- ?)     \ Expanded for speed. Used 4X in Kernel
+CODE 0=  ( n -- ?)         \ used 6X in kernel
+             TOS NEG,
+             NE IF,
+                 TOS SETO,
+             ENDIF,
+             TOS INV,
+             NEXT,
+             ENDCODE
+
+CODE =     ( n n -- ?)     \ Used 4X in Kernel
              *SP+ TOS CMP,
-@@7:          TOS CLR,
+              TOS CLR,
               EQ IF,
-@@9:                TOS SETO,
+                TOS SETO,
               ENDIF,
               NEXT,
+              ENDCODE
 
-\ stack setter routines are the smallest way to do this on 9900
-@@8:          TOS CLR,   NEXT,
-\ @@9:          TOS SETO,  NEXT, \ used = saves 2 bytes
-
-\ using +CODE allows all these routines to jump inside CODE .. ENDCODE
-+CODE 0<     ( n -- flag )
+CODE 0<     ( n -- flag )
               TOS TOS  MOV,
-              @@9 JLT,
-              @@8 JMP,
+              TOS SETO,
+              @@1 JLT,
+              TOS CLR,          \ Common FALSE stack setter
+@@1:          NEXT,
+              ENDCODE
 
-+CODE U<    ( n1 n2 -- flag)
+CODE U<    ( n1 n2 -- flag)
              *SP+ TOS CMP,
-              @@9 JL,
-              @@8 JHE,            \ changed to JHE due to bug on U>
+              TOS SETO,
+              @@1 JL,
+              TOS CLR,
+@@1:          NEXT,
+              ENDCODE
 
-+CODE >=     TOS DEC,             \ used in VDP driver
-              @@1 JMP,
-+CODE >     ( n1 n2 -- flag)
-@@1:         *SP+ TOS CMP,
-              @@9 JGT,
-              @@8 JMP,
-
-+CODE <     ( n1 n2 -- flag)
+CODE >     ( n1 n2 -- flag)
              *SP+ TOS CMP,
-              @@9 JLT,
-              @@8 JMP,
+              TOS SETO,
+              @@1 JGT,
+              TOS CLR,
+@@1:          NEXT,
+              ENDCODE
+
+CODE <     ( n1 n2 -- flag)
+             *SP+ TOS CMP,
+              TOS SETO,
+              @@1 JLT,
+              TOS CLR,
+@@1:          NEXT,
+              ENDCODE
 ENDCODE
 
 \ ==================================================================
@@ -937,8 +929,9 @@ CODE <?DO> ( limit ndx -- )
  @@2:          @@1 JNO,          \ if no overflow then loop again
                IP INCT,          \ move past (LOOP)'s in-line parameter
                @@3 JMP,          \ JUMP to unloop
- @@1:         *IP IP ADD,        \ jump back  (NO SPEED UP BY BRANCHING TO hi-speed version)
-               next,           \ inline next is much faster
+ @@1:         *IP IP ADD,        \ jump back
+               NEXT,           \ faster to do inline NEXT
+
 +CODE <+LOOP>
               TOS *RP ADD,      \ saving space by jumping into <loop>
               TOS POP,          \ refill TOS, (does not change overflow flag)
@@ -961,7 +954,7 @@ CODE J       ( -- n)
               6 (RP) TOS SUB,   \ index = loopindex - fudge
               NEXT,
               ENDCODE
-[THEN]
+
 
 CODE BOUNDS ( adr len -- adr2 adr1)  \ same size as Forth version
              *SP R1 MOV,
@@ -1118,7 +1111,7 @@ CODE (FIND) ( Caddr NFA -- XT ? )
 
 \ multi-tasking support
 CODE PAUSE   ( -- )       \ MULTI-TASKER switcher needed by I/O words in Kernel
-            NEXT,        \ patch CODE address with NEXT (replaced for multi-tasking)
+           NEXT,        \ patch CODE address with NEXT (replaced for multi-tasking)
             0000 T,
             ENDCODE
 

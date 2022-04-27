@@ -1,31 +1,32 @@
-\ HOW TO USE ;CODE in DTC Forth.
+\ How get to the DATA field in DTC Forth with ;CODE
 
-\ The example below shows that it takes a bit more trouble to get the
-\ contents of the data field in DTC when using ;CODE.
-\ The W register (R8) is pointing to the BL instruction so we must First
-\ bump W by 4.  Then we can "fetch" the contents of W with indirect addressing.
+\ It is a bit harder to get the data field address of a word use ;CODE.
+\ In Indirect threaded Forth the W register holds the DATA field address
+\ after NEXT runs.
+\ In CAMEL99 DTC Forth the "W" register that hold the CFA of a word is R5.
+\ The CFA of a Forth word contain a branch & link instruction and an address.
+\ We COULD increment the W register by 4 to get to the DATA field but
+\ because we use a BL instruction to enter Forth hi-level words we get the
+\ DATA field for free in R11. :)
+\ So TMS9900 BL and R11 makes it just a easy as ITC to use ;CODE in DTC Forth.
 
-INCLUDE DSK1.ASM9900
+
+\ first load the DTC Assembler. This will also give us ;CODE
+INCLUDE DSK1.ASM99DTC
 
 HEX
-: ;CODE
-   POSTPONE (;CODE)
-   ?CSP POSTPONE [
-   REVEAL
-; IMMEDIATE
-
 CREATE Q 100 ALLOT
 
 \ access VDP memory as fast arrays
-: TABLE: ( Vaddr -- )
+: VDP-BYTE-ARRAY: ( Vaddr -- )
      CREATE     ,               \ compile base address in VDP RAM
      ;CODE ( n -- Vaddr')       \ RUN time
-         *W+ *W+ MOV,       \ INC W by 4
-         *W TOS ADD,        \ W holds the PFA pointer of the word.
-         NEXT,
-ENDCODE
+       A11B ,    \ *R11 TOS ADD,  ( add base address to index in TOS)
+       NEXT,
+     ENDCODE
 
-Q TABLE: ]Q
+Q  VDP-BYTE-ARRAY: ]Q
 
-Q U.    \ these 2 expressions should produce the same address
+\ These two lines will give us the same address
+Q U.
 0 ]Q U.
