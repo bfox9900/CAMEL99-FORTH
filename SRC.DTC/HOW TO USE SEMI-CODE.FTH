@@ -17,18 +17,18 @@
 INCLUDE DSK1.ASM9900
 
 HEX
-\ VP is the Video RAM memory pointer. Initialized to HEX 1000 on boot.
 
 \ access VDP memory as fast arrays
 : BYTE-ARRAY: ( Vaddr -- )
      CREATE                 \ make a name in the dictionary
             ,               \ compile the array's base address
 
-     ;CODE ( n -- Vaddr')       \ RUN time
+     ;CODE ( n -- Vaddr')   \ RUN time
        *R11 TOS ADD,  ( add base address to index in TOS)
        NEXT,
      ENDCODE
 
+\ VP is the Video RAM memory pointer. Initialized to HEX 1000 on boot-up
 VP @  BYTE-ARRAY: ]VDP   \ array will start at location of VP
 
 \ These two lines will now give us the same address: HEX 1000

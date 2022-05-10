@@ -1,64 +1,9 @@
-\ CAMEL99 Forth for TI-99, DIRECT THREADED VERSION  27apr2022 Brian Fox
-\ Copyright (c) 2022 Brian Fox
+\ CAMEL99 Direct Threaded Forth for the TI-99  May 1,2022 Fox
+\ Copyright (c) 2018 Brian Fox
 \ KILWORTH Ontario Canada
 \ brian.fox@brianfox.ca
 
-\ compiles with XFC99X.EXE cross-compiler
-
-\ This program is free software; you can redistribute it and/or modify
-\ it under the terms of the GNU General Public License as published by
-\ the Free Software Foundation; either version 3 of the License, or
-\ (at your option) any later version.
-\ You should have received a copy of the GNU General Public License
-\ along with this program.  If not, see <http://www.gnu.org/licenses/>.
-\
-\ The work derived from CAMEL Forth under the GNU General Public License.
-\ CamelForth (c) 2009 Bradford J. Rodriguez.
-\ Commercial inquiries for Camel Forth should be directed to:
-\ 115 First St., #105, Collingwood, Ontario L9Y 4W3 Canada
-\ or via email to bj@camelforth.com
-
-\ History
-\ Apr 2022  Moved to Direct threaded code
-
-\ ===================[ COMPILER CONTROL VALUES ]======================
-CROSS-COMPILING
-
-A000  VALUE KERNORG  \ A000 for expansion RAM, 6000 for SuperCart RAM
-TRUE  VALUE SMALLER  \ T= NEXT branches through R10,  F= inline NEXT (too big)
-
-\ ======================================================================
-\ M E M O R Y   U S A G E   D E F I N I T I O N S
-CROSS-COMPILING
-HEX
-       0FFFE   EQU EMEM    \ EMEM = "end of memory"
-   EMEM 0080 - EQU 'TIB    \ ADDRESS OF Terminal Input Buffer
-   EMEM 'TIB - EQU TIBSIZE \ 128 bytes
-
-\ ======================================================================
-\ Create FORTH EQUATES
-HEX
-     'TIB 2 -   EQU 'SP0    \ FORTH DATA stack base address
-     'TIB 100 - EQU 'RP0    \ FORTH RETURN stack base address
-
-\ ========================================================================
-\ load cross-compiling versions of CODE VARIABLE CONSTANT USER  :
-
-[CC] INCLUDE CC9900\SRC.DTC\DTCTYPES.HSF
-
-\ ======================================================================
-\ C O D E   P R I M I T I V E S
-
-[CC] cr .( Compile Forth Assembler primitives ...)
-
-[CC] INCLUDE CC9900\SRC.DTC\9900DTBL.HSF   \ direct threaded using BL
-[CC] INCLUDE CC9900\SRC.DTC\TI99IOX.HSF    \ VDP & KEY code
-
-\ ======================================================================
-\ C R O S S   C O M P I L E R   B O O T - S T R A P P I N G
-\ add loop and branch words to the cross-compiler (not the TARGET)
-
-[CC] INCLUDE CC9900\SRC.DTC\BOOTSTRX.HSF
+\ compiles with XFC99X.EXE cross-compiler SEE: FORTHITC.MAK
 
 TARGET-COMPILING
 
@@ -316,7 +261,9 @@ CODE /STRING ( c-addr1 u1 n -- c-addr2 u2 ) \ ~20uS!!       Clks
 \ H E A D E R   N A V I G A T I O N
 
 TARGET-COMPILING
-CODE NFA>LFA    TOS -3 ADDI, NEXT, ENDCODE
+\ CODE NFA>LFA ( n -- n')   TOS -3 ADDI, NEXT, ENDCODE
+
+: NFA>LFA ( n -- n')  3 - ;
 
 \ Changed 7F to 1F . 31 character max name length. Other bits for future use
 : NFA>CFA       ( nfa -- cfa ) COUNT  1F AND + ALIGNED ;
@@ -416,13 +363,15 @@ CODE DIGIT?   ( char -- n f )
 \ ======================================================================
 \ S I M P L E   S O U N D  I N T E R F A C E
 
-[CC] include cc9900\SRC.DTC\ticktock.hsf   \ hardware milli-second timer
-
 TARGET-COMPILING
 
 \ write a byte to address of TMS9919 chip
 CODE SND!   ( c -- )  TOS SWPB, TOS 8400 @@ MOVB,  TOS POP, NEXT, ENDCODE
 
+[CC] DECIMAL [TC]
+: MS   ( n -- ) 10 /  0 ?DO  420 TICKS LOOP ;
+
+[CC] HEX [TC]
 : BEEP     ( -- )
             80 SND! 5 SND!    \ pre-calculated values for OSC1 1390Hz
             91 SND!           \ turn on OSC1 at -2 dB level
@@ -468,7 +417,7 @@ CODE LASTLN ( -- vaddr)
 \ *G Scrolling has been implemented in Forth using VREAD & VWRITE
 \ ** Uses un-allocated Dictionary as a temporary buffer to hold lines of text
 
-SMALLER [IF]
+-1 [IF]
 :  SCROLL ( -- ) \ FULL screen buffer version (fast)
          PAUSE
          VPG @  HERE 100 + DUP>R C/SCR @  VREAD
@@ -761,11 +710,35 @@ TARGET-COMPILING
               2 VMODE !  \ 2=ID for 40 column "TEXT" mode
                 PAGE ;
 
-\ ======================================================================
 \ TI-99 F I L E   S Y S T E M   I N T E R F A C E
 
  [CC] include CC9900\SRC.DTC\dsrlinkA.hsf
  [CC] include CC9900\SRC.DTC\filesyX2.hsf
+
+\ ======================================================================
+0 [if]
+TARGET-COMPILING
+: WORDS     ( -- )
+             CR
+             0        ( word counter on stack)
+             LATEST @
+             BEGIN
+                DUP   ( -- nfa) COUNT TYPE SPACE
+                SWAP 1+ SWAP       \ inc. the counter
+                NFA>LFA @ DUP
+                ?TERMINAL  TS" *BREAK*" ?ABORT
+             0= UNTIL
+             DROP
+             CR  U. SPACE t." words" ;
+[then]
+TARGET-COMPILING
+: .S        ( -- )
+      T." |"
+      DEPTH
+      IF
+         0 DEPTH 2-
+         DO    I PICK  U.    -1 +LOOP
+      THEN ;
 
 \ ======================================================================
 \ D I C T I O N A R Y   C R E A T I O N
@@ -849,74 +822,59 @@ CODE COLD
 \ *G : ENDCODE   ( -- )  ?CSP  ;
 \ *G ;CODE is moved to DSK1.SYSTEM ***
 
-[CC] HEX
-\ ======================================================================
-\ TEST CODE
-TARGET-COMPILING
-
-\             *** TESTS PERFORMED TO DEBUG INTERPRETER ***
-\ DO LOOP:   PASSED
-\ : .CHARS        CR 80 BL DO I (EMIT) LOOP ;
-\ : .NUMS       CR 100 0 DO I . LOOP ;
-
-\ IF/ELSE/THEN:  PASSED
-\ : TEST       CR CR KEY T[CHAR] Q =
-\              IF   T." It's Q"
-\              ELSE T." Not Q"
-\              THEN
-\ ;
-
-\ : LOOPER   FFFF BEGIN 1- DUP WHILE JOB 1+!  REPEAT DROP ;
-\ address tests: PASSED
-\              CR HERE U. PAD U. TIB U.
-\              CR 'FIND @ U.   T['] <FIND> U.
-\              CR 'IV @   U.   T['] <INTERP> U.
-
-\ test accept: PASSED
-\              PAD DUP 50 ACCEPT
-\              CR TYPE
-
-\ test FIND: PASSED
-\              CR TIB DUP 40 ACCEPT
-\              PAD PLACE
-\              PAD FIND SWAP U. U.
-
 \ ======================================================================
 \ B O O T  U P  C O D E
-
-[CC] KERNORG 6000 =
-[IF]   [TC] : VERSION  TS" CAMEL99 DTC Forth SuperCart V2.68" ;
-[ELSE] [TC] : VERSION  TS" CAMEL99 DTC Forth V2.68" ;
+\ *new* Added VER string for easy updates
+[CC] CODESEG 6000 =
+[IF]
+    [TC] : .VER   T." DTC 2.69 7MAY22 SuperCart" ;
+[ELSE]
+    [TC] : .VER   T." DTC 2.69 7MAY22" ;
 [THEN]
 
-: WARM     ( -- )
-\ *G restarts Forth and loads DSK1.START
-          80 83C2 C!
-          26 TPAD !
-          1000 VP !
-          2000  H !
-          3FFF TMR!
-          VDPTOP ^PAB !
-          L0 LP !
-          FLOOR ON
-          SOURCE-ID OFF
+[CC]
+\ ======================================================================
+\ B O O T   U P   C O D E
+HEX
+TARGET-COMPILING
 
-         t['] <INTERP> 'IV !
-         T['] <FIND>  'FIND !
-          L0 LP !
-          ORGDP @ DP !
-          ORGLAST @ LATEST !
-          LATEST DUP CONTEXT ! CURRENT !
-          TEXT
-          VERSION TYPE
-          DECIMAL
+0 [IF]
+: DEBUG
+        HEX
+          CR  HERE U.  DP @ U.
+          CR  CONTEXT @ U.   CURRENT @ U.
+          CR  CONTEXT @ @ U.
+          CR  LATEST U.  LATEST @ U.
+;
+[THEN]
+
+\ *G (WARM) initializes variables and vectors
+: WARM      ( -- )
+              80 83C2 C!
+              26 TPAD !
+              1000 VP !
+              2000  H !
+              3FFF TMR!
+              VDPTOP ^PAB !
+              L0 LP !
+              FLOOR ON
+              SOURCE-ID OFF
+
+            t['] <INTERP> 'IV !
+            t['] <FIND>   'FIND !
+
+             DECIMAL
+             ORGDP @ DP !
+             ORGLAST @ LATEST !
+             LATEST DUP CONTEXT ! CURRENT !
+             TEXT TS" CAMEL99 Forth " TYPE .VER
 ;
 
-\ G*  LOADSYS is the default boot word that starts Forth and loads extensions
+\ G*  CAMEL99 is the primary boot word that starts Forth and loads extensions
 : LOADSYS
-       WARM
-       TS" DSK1.START" INCLUDED
-       CR QUIT ;
+            WARM
+            TS" DSK1.START" INCLUDED
+            CR ABORT ;
 
 \ ======================================================================
 \ define target comment words
@@ -934,58 +892,4 @@ TARGET-COMPILING
  X: :NONAME   HERE  !CSP   (:NONAME)  ;X
  X: ;     [  REVEAL  _HSEXIT ,  ?CSP  ;X  XIMMEDIATE
 
-[CC]
-\           F O R T H   S Y S T E M   C O D E   E N D S
-\ /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-CR .( Forth Kernel compiled completely)
-
-\ ======================================================================
-\  P A T C H   T H E   T A R G E T  S Y S T E M   V A R I A B L E S
-[CC]
-KERNORG 6000 =
-[IF]
-      XLATEST @ DUP LATEST T! ORGLAST T!
-      THERE DP T!   A000 ORGDP T!
-[ELSE]
-         XLATEST @ DUP LATEST T! ORGLAST T!
-       THERE DUP DP T!   ORGDP T!
-[THEN]
-
-\ ======================================================================
-\ P A T C H   T A R G E T   I M A G E  F I L E   H E A D E R
-[CC]
-KERNORG 6000 =
-[IF]
-     FILENAME: CAM99DSC
-[ELSE]
-     FILENAME: CAM99DTC
-[THEN]
-         T' COLD BOOT-ADDRESS T!
-
-\ SET THE BOOT WORD TO RUN
-
-         T' LOADSYS  BOOT T!
-
-        END. ( report compile time and stats)
-
-\ ======================================================================
-\ S A V E   B I N A R Y  I M A G E   F I L E
-
-     FILENAME$ $SAVE-EA5.     \ FILENAME$ was set by FILENAME:
-
-\ ======================================================================
-\  C O P Y   T O   T I - 9 9   V I R T U A L   D I S K
-.( copying binary file to TI-99 Emulator DSK1.)
-
-\ build the copy command in host Forth PAD memory
-S" COPY " PAD PLACE   FILENAME$ COUNT PAD +PLACE
-S"  cc9900\CAMEL99.WIP\dsk1.dtc\" PAD +PLACE
-
-CR PAD COUNT 2DUP TYPE SYSTEM
-
-CROSS-COMPILING
-
- CR ." === COMPILE ENDED PROPERLY ==="
-QUIT
-
-\ BYE  ( OR use this to return to DOS)
+ CROSS-COMPILING

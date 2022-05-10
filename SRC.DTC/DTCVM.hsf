@@ -96,7 +96,7 @@ CROSS-COMPILING     \ these words will extend the functionality of the Cross-Ass
 \ We must assign an Execution token to "NEXT," so all the subsequent
 \ CODE words will end with the correct code.
 
-SMALLER
+-1 
 [IF]
   ' JMP-NEXT IS NEXT,         \ Assign JMP-NEXT to NEXT,
 [ELSE]
