@@ -5,8 +5,8 @@
 \ make a set of words that are more like BASIC. Although they are not
 \ exactly the same they are easier to use.
 
-NEEDS VALUE  FROM DSK1.VALUES.F
-NEEDS R/W    FROM DSK1.ANSFILES.F
+NEEDS VALUE  FROM DSK1.VALUES
+NEEDS R/W    FROM DSK1.ANSFILES
 
 \ define 3 file identifiers. You can make more if you need to.
 0 VALUE #1
@@ -33,5 +33,3 @@ NEEDS R/W    FROM DSK1.ANSFILES.F
 ;
 \ alias the word TO for use with OPEN
 : AS:     ( n -- <value>) POSTPONE TO ; IMMEDIATE
-
-

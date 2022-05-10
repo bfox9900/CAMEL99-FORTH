@@ -4,6 +4,7 @@ HERE
 NEEDS VC, FROM DSK1.VDPMEM  \ use by new CALLCHAR
 
 HEX
+\ ====================== *DTC Forth ONLY* ========================
 \ access VDP memory as arrays
 : TABLE: ( Vaddr -- )
      CREATE     ,         \ compile base address in VDP RAM
@@ -14,12 +15,12 @@ HEX
 
 : TABLE8: ( addr -- )    \ create a table of 8 byte records
      CREATE    ,
-     ;CODE 
+     ;CODE
        0A34 ,    \ TOS 3 SLA,  ( tos = n x 8 )
        A11B ,    \ *R11 TOS ADD, ( add base address to index in TOS)
        NEXT,
      ENDCODE
-
+\ ================================================================
  0380 TABLE:  ]CTAB     \ colour table VDP address
  0800 TABLE8: ]PDT      \ "pattern descriptor table" VDP address
 
@@ -93,30 +94,29 @@ HEX
           2SWAP >VPOS   ( -- char cnt vdp1)
           DUP>R         ( -- char cnt vdp1)  ( r: vdp1)
           OVER +        ( -- char cnt vdp_end)
-          C/SCR @ 1- -   0 MAX - ( char cnt' )
+          C/SCR @ -  0 MAX - ( char cnt' )
           R> -ROT SWAP VFILL ;
 
 \ change to Graphics mode (C/SCR = HEX300) to compile VCHAR correctly
 GRAPHICS
-
-HEX
-CODE VWRAP   \ 4x faster than Forth
-  02A1 ,               \ R1 STWP,
-  0202 , C/SCR @ 1- ,  \ R2 C/SCR @ 1- LI,
-  A121 , 002E ,        \ 2E R1 () TOS ADD,  ( C/L@ TOS + )
-  8084 ,               \ TOS  R2 CMP,
-  1201 ,               \ HI IF,
-  6102 ,               \    R2 TOS SUB,
-                       \ ENDIF,
-  NEXT,
-ENDCODE
-
-: VCHAR ( col row char cnt --)
-      2SWAP >VPOS
-      1 MAX SWAP 0
-      DO  2DUP VC!  VWRAP  LOOP
-      2DROP
+\ VCHAR bug fix to handle cnt=0
+: (VCHAR) ( -- char cnt vdp_addr )
+          1+ SWAP 0
+          ?DO               ( -- char vadr)
+             2DUP VC!       \ write a character
+             C/L@ +         \ bump address by char-per-line
+             DUP [ C/SCR @ 1- ] LITERAL >
+             IF
+                 [ C/SCR @ 1- ] LITERAL -
+             THEN
+          LOOP
 ;
+
+: VCHAR  ( col row char cnt -- )
+           2SWAP            ( -- char cnt col row )
+          >VPOS             ( -- char cnt vdp_addr)
+          (VCHAR) 2DROP ;
+
 
 CR .( GRAPHICS 1 Mode READY)
 CR HERE SWAP - DECIMAL . .( bytes)

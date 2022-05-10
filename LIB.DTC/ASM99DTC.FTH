@@ -178,7 +178,7 @@ CR .( Pseudo instructions)
 \ PUSH & POP for both stacks
 : PUSH,   ( src -- )  SP DECT,  *SP  MOV, ;  \ 10+18 = 28  cycles
 : POP,    ( dst -- ) *SP+       SWAP MOV, ;  \ 22 cycles
-
+ 
 : RPUSH,  ( src -- ) RP DECT,  *RP   MOV, ;
 : RPOP,   ( dst -- ) *RP+      SWAP  MOV, ;
 
