@@ -13,11 +13,12 @@ If you have a Super Cart then you can load DSK1.CAM99DSC which puts the Forth
 Kernel in Super Cart RAM. This lets you use the 32K CPU RAM for your programs.
 
 ### *NOTICE*
-As of April 2022 the library files have not all been vetted and many will
+As of May 10, 2022 the library files have not all been vetted and some will
 crash. This is primarily due to optimization assumptions made for ITC code that
 do not work with the DTC code.
 
-Needless to say the ITC version of INLINE does not work at this time.
+MTASK99 gives this system multi-tasking and it works
+INLINE  gives you some pretty good speed-ups on code fragments and it works. 
 
 ### Important differences
 
@@ -32,16 +33,33 @@ DSK1.START also pulls in DSK1.SYSTEMDTC to add the rest of the CORE words to the
 for the earlier ITC system and the SYSTEMDTC is for the DTC system.
 
 ### DSK1.START Contents
+If you don't like the screen colors on startup, just change the E4 value below.
+E is foreground (gray)
+4 is background ( dark blue) 
 
 ```
-\ V1.0 START file loads ANS Forth extensions
-  S" DSK1.ISOLOOPS" INCLUDED
-  S" DSK1.SYSTEMDTC" INCLUDED ( for DTC this has loops and branching)
-  S" DSK1.HSPRIMS" INCLUDED   ( can be removed to save space)
-  DECIMAL
+\ V2.1 START file loads NEEDS/FROM and then loads ANS Forth extensions
+ 
+S" DSK1.SYSTEMDTC" INCLUDED
+S" DSK1.HSPRIMS" INCLUDED
+ 
+HEX E4 7 VWTR
+ 
+INCLUDE DSK1.LOADSAVE
+S" DSK1.FONT0230" LOAD-FONT
+ 
+HEX
+CR RP0 86 + HERE - DECIMAL  . ." Hi RAM free"
+HEX
+CR 4000 H @ - DECIMAL SPACE . ." Low RAM free"
+CR VDPTOP  VP @ - DECIMAL   . ." VDP RAM free"
+CR CR .( Ready)
+DECIMAL
+ 
+
 ``` 
 
-### Using FAST-RAM Primitives
+### Explanatio for DSK1.HS-PRIMS ie: FAST-RAM Primitives
 Some of the common primitives use by Forth are copied into the tiny 16-bit RAM in the TI-99 console.  
 To give the compiler access to these primitives the START file include the file: DSK1.HSPRIMS
 There is lower percentage of performance enhancement with this TI-99 trick than in ITC Forth because 
