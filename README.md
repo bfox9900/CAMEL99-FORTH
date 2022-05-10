@@ -58,9 +58,9 @@ CR CR .( Ready)
 DECIMAL
 ``` 
 
-### Explanatio for DSK1.HS-PRIMS ie: FAST-RAM Primitives
-Some of the common primitives use by Forth are copied into the tiny 16-bit RAM in the TI-99 console.  
-To give the compiler access to these primitives the START file include the file: DSK1.HSPRIMS
+### Explanation for DSK1.HS-PRIMS ie: FAST-RAM Primitives
+Some of the common primitives used by Forth are copied into the tiny 16-bit RAM in the TI-99 console.  
+To give the compiler access to these primitives the START file includes the file: DSK1.HSPRIMS
 There is lower percentage of performance enhancement with this TI-99 trick than in ITC Forth because 
 the underlying DTC architecture is faster.
 
