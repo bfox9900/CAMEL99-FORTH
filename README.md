@@ -13,12 +13,14 @@ If you have a Super Cart then you can load DSK1.CAM99DSC which puts the Forth
 Kernel in Super Cart RAM. This lets you use the 32K CPU RAM for your programs.
 
 ### *NOTICE*
-As of May 10, 2022 the library files have not all been vetted and some will
-crash. This is primarily due to optimization assumptions made for ITC code that
+As of May 10, 2022 the library files have not all been vetted but most work.
+However some will crash. Please report any issues you find.
+This is primarily due to optimization assumptions made for ITC code that
 do not work with the DTC code.
 
-MTASK99 gives this system multi-tasking and it works
-INLINE  gives you some pretty good speed-ups on code fragments and it works. 
+- MTASK99 gives this system multi-tasking and now works
+- INLINE  gives you some pretty good speed-ups on code fragments and now works. 
+- SAMSFTH works but the machine code version DSK1.SAMS does not. 
 
 ### Important differences
 
