@@ -28,10 +28,9 @@ The CAMEL99 DTC Kernel is cross-compiled and so all looping and branching has
 been made by the cross-compiler. There are NO compiler words in the kernel to
 do IF/ELSE/THEN , BEGIN/UNTIL etc.  
 
-The file DSK1.ISOLOOPS is pulled in by the DSK1.START file when the system
-boots to add this functionality.
-
-DSK1.START also pulls in DSK1.SYSTEMDTC to add the rest of the CORE words to the kernel.  The file name is changed from DSK1.SYSTEM to clarify that one file is
+DSK1.START also pulls in DSK1.SYSTEMDTC to add the rest of the CORE words to 
+the kernel which includes IF,ELSE,THEN,BEGIN,UNTIL,WHILE and REPEAT.  
+The file name is changed from DSK1.SYSTEM to clarify that one file is
 for the earlier ITC system and the SYSTEMDTC is for the DTC system.
 
 ### DSK1.START Contents
@@ -57,8 +56,6 @@ CR 4000 H @ - DECIMAL SPACE . ." Low RAM free"
 CR VDPTOP  VP @ - DECIMAL   . ." VDP RAM free"
 CR CR .( Ready)
 DECIMAL
- 
-
 ``` 
 
 ### Explanatio for DSK1.HS-PRIMS ie: FAST-RAM Primitives
