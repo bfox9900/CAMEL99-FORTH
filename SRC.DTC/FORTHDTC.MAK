@@ -29,8 +29,8 @@ TRUE  \ true= standard kernel ;  false=non-standard kernel
     A000 VALUE CODESEG
     2000 VALUE HEAPSEG
 [ELSE]
-		6000 VALUE CODESEG  \ the specific alternate load address to use
-		2000 VALUE HEAPSEG  \ initial HEAP address when kernel boots
+    6000 VALUE CODESEG  \ the specific alternate load address to use
+    2000 VALUE HEAPSEG  \ initial HEAP address when kernel boots
 [THEN]
 
 \ ======================================================================
@@ -59,17 +59,17 @@ TRUE  \ true= standard kernel ;  false=non-standard kernel
  CODESEG 6000 =
  [IF]
        [CC] XLATEST @ DUP
-			 [TC] LATEST T!  ORGLAST T!
+       [TC] LATEST T!  ORGLAST T!
        THERE  DP T!
-			 A000 ORGDP T!
-			 FILENAME: CAM99DSC
+	A000 ORGDP T!
+        FILENAME: CAM99DSC
 
  [ELSE]
       [CC] XLATEST @ DUP
-			[TC] LATEST T! ORGLAST T!
+      [TC] LATEST T! ORGLAST T!
       [CC]  THERE 2+ DUP
-			[TC] DP T!	ORGDP T!
-			 FILENAME: CAM99DTC
+      [TC] DP T!  ORGDP T!
+      FILENAME: CAM99DTC
 
  [THEN]
 
