@@ -96,12 +96,12 @@ CROSS-COMPILING     \ these words will extend the functionality of the Cross-Ass
 \ We must assign an Execution token to "NEXT," so all the subsequent
 \ CODE words will end with the correct code.
 
--1 
+NEXT-INLINE               \ set/reset this flag in FORTHDTC.MAK
 [IF]
-  ' JMP-NEXT IS NEXT,         \ Assign JMP-NEXT to NEXT,
+  ' IL-NEXT IS NEXT,      \ next will compile inline
 [ELSE]
-  ' IL-NEXT IS NEXT,
- [THEN]
+   ' JMP-NEXT IS NEXT,    \ next is branch through R10
+[THEN]
 
 
 \ ==========================================================================
