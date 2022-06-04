@@ -19,8 +19,9 @@ This is primarily due to optimization assumptions made for ITC code that
 do not work with the DTC code.
 
 - MTASK99 gives this system multi-tasking and now works
-- INLINE  gives you some pretty good speed-ups on code fragments and now works. 
-- SAMSFTH works but the machine code version DSK1.SAMS does not.
+- INLINE  gives you some pretty good speed-ups on code fragments (~40%) and now works. 
+- SAMSFTH works to access a 1M memory card
+  but the machine code version DSK1.SAMS does not work
 - SAVESYS has been updated and the same code works for DTC and ITC Forth 
 
 ### Important differences
