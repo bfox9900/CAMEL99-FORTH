@@ -20,7 +20,8 @@ do not work with the DTC code.
 
 - MTASK99 gives this system multi-tasking and now works
 - INLINE  gives you some pretty good speed-ups on code fragments and now works. 
-- SAMSFTH works but the machine code version DSK1.SAMS does not. 
+- SAMSFTH works but the machine code version DSK1.SAMS does not.
+- SAVESYS has been updated and the same code works for DTC and ITC Forth 
 
 ### Important differences
 
