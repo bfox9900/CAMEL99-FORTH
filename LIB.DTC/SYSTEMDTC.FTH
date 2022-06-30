@@ -26,7 +26,7 @@ CR .( Extensions for DTC Forth)
 : ?DO     ( -- ) ?COMP POSTPONE <?DO> HERE  0 >L ;  IMMEDIATE
 : LEAVE   ( -- ) ( L: -- addr )
   POSTPONE UNLOOP   POSTPONE BRANCH AHEAD  >L ; IMMEDIATE
-
+.( .)
 : RAKE   ( -- ) ( L: 0 a1 a2 .. aN -- )
   BEGIN  L> ?DUP       \ read leave stack, dup if <>0
   WHILE  POSTPONE THEN \ resolve branch in LEAVE
@@ -55,16 +55,7 @@ CODE >BODY   05C4 , NEXT, ENDCODE  \ 2+
 CODE CELL+   05C4 , NEXT, ENDCODE  \ 2+
 CODE CHARS   NEXT, ENDCODE
 
-\ for interpret mode
-: CHAR    ( -- <c>) BL WORD CHAR+ C@ ;
-
-\ for compiling in a colon definition
-: [CHAR]  ( -- <c>) ?COMP CHAR POSTPONE LITERAL ; IMMEDIATE
-
 .( .)
-: ;CODE
-   POSTPONE (;CODE)
-   ?CSP POSTPONE [
-   REVEAL
-; IMMEDIATE
-.( .)
+: CHAR    ( -- <c>) BL WORD CHAR+ C@ ; \ for interpret mode
+: [CHAR]  ( -- <c>) ?COMP CHAR POSTPONE LITERAL ; IMMEDIATE \ for compiling
+: ;CODE   POSTPONE (;CODE)  ?CSP  POSTPONE [  REVEAL ; IMMEDIATE
