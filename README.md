@@ -41,10 +41,10 @@ E is foreground (gray)
 4 is background ( dark blue) 
 
 ```
-\ V2.1 START file loads NEEDS/FROM and then loads ANS Forth extensions
+\ V2.1 START file loads ANS Forth extensions
  
 S" DSK1.SYSTEMDTC" INCLUDED
-S" DSK1.HSPRIMS" INCLUDED
+S" DSK1.HSPRIMS" INCLUDED ( use fast RAM for 5 primitives) 
  
 HEX E4 7 VWTR
  
