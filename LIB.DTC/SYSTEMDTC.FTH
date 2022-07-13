@@ -1,5 +1,5 @@
 CR .( Extensions for DTC Forth)
-
+WARNINGS OFF
 .( .)
 \ special compilers needed for hi-speed code in scratch-pad RAM
 : ?BRANCH  _?HSBRANCH , ; IMMEDIATE
@@ -41,9 +41,7 @@ CR .( Extensions for DTC Forth)
 .( .)
 : FROM   ( ? -- )
          BL PARSE-WORD ROT ( addr len ? --)
-         0= IF  INCLUDED
-         ELSE   2DROP
-         THEN ;
+         0= IF  INCLUDED EXIT THEN  2DROP ;
 .( .)
 \ INCLUDE  Forth 2012 word
 : PARSE-NAME ( <text> -- adr len ) BL PARSE-WORD ; \ Forth 2012 word
@@ -77,3 +75,4 @@ CODE CHARS   NEXT, ENDCODE
    REVEAL
 ; IMMEDIATE
 .( .)
+WARNINGS ON
