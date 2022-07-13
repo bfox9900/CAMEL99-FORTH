@@ -18,15 +18,15 @@ WARNINGS OFF
 : REPEAT  POSTPONE AGAIN POSTPONE THEN ; IMMEDIATE
 .( .)
 \ CAMEL Forth LEAVE stack pointer is initialized by QUIT
-: >L       ( x -- ) ( L: -- x )  2 LP +!  LP @ ! ;
-: L>       ( -- x )  ( L: x -- ) LP @ @   -2 LP +! ;
+: >L       ( x -- ) ( L: -- x ) 2 LP +!  LP @ ! ;
+: L>       ( -- x ) ( L: x -- ) LP @ @   -2 LP +! ;
 
 \                   -compile this-  - run this now-
 : DO      ( -- ) ?COMP POSTPONE <DO>  HERE  0 >L ;  IMMEDIATE
 : ?DO     ( -- ) ?COMP POSTPONE <?DO> HERE  0 >L ;  IMMEDIATE
 : LEAVE   ( -- ) ( L: -- addr )
   POSTPONE UNLOOP   POSTPONE BRANCH AHEAD  >L ; IMMEDIATE
-
+.( .)
 : RAKE   ( -- ) ( L: 0 a1 a2 .. aN -- )
   BEGIN  L> ?DUP       \ read leave stack, dup if <>0
   WHILE  POSTPONE THEN \ resolve branch in LEAVE
@@ -35,22 +35,15 @@ WARNINGS OFF
 : LOOP    ( -- )  POSTPONE <LOOP>   <BACK RAKE ; IMMEDIATE
 : +LOOP   ( -- )  POSTPONE <+LOOP>  <BACK RAKE ; IMMEDIATE
 
-\ USE:  NEEDS HCHAR FROM DSK1.GRAFIX
-.( .)
-: NEEDS  ( -- ?)  BL WORD FIND NIP  ;
-.( .)
-: FROM   ( ? -- )
-         BL PARSE-WORD ROT ( addr len ? --)
-         0= IF  INCLUDED EXIT THEN  2DROP ;
-.( .)
-\ INCLUDE  Forth 2012 word
-: PARSE-NAME ( <text> -- adr len ) BL PARSE-WORD ; \ Forth 2012 word
-: INCLUDE  ( <text> -- )  PARSE-NAME INCLUDED SPACE
-            LINES @ DECIMAL . ." lines"  ;
+\ Usage:  NEEDS HCHAR FROM DSK1.GRAFIX
+: NEEDS  ( -- ?)  BL WORD FIND NIP ;
+: FROM   ( ? -- ) PARSE-NAME ROT IF 2DROP EXIT THEN  INCLUDED ;
 
-\ CODE.FTH let's you make machine code words
-\ for use with the assembler AND DTC Forth
-HEX
+: PARSE-NAME ( <text> -- adr len ) BL PARSE-WORD ; \ Forth 2012 word
+: INCLUDE ( <text>) PARSE-NAME INCLUDED SPACE LINES @ DECIMAL . ." lines" ;
+.( .)
+
+\ CODE let's you make machine code words or use with ASM9900
 : CODE      ( -- )  HEADER  !CSP ;
 : NEXT,     ( -- )  045A ,       ;  \ B *R10
 : ENDCODE   ( -- )  ?CSP         ;
@@ -62,17 +55,5 @@ CODE >BODY   05C4 , NEXT, ENDCODE  \ 2+
 CODE CELL+   05C4 , NEXT, ENDCODE  \ 2+
 CODE CHARS   NEXT, ENDCODE
 
-\ for interpret mode
-: CHAR    ( -- <c>) BL WORD CHAR+ C@ ;
-
-\ for compiling a colon definition
-: [CHAR]  ( -- <c>) ?COMP CHAR POSTPONE LITERAL ; IMMEDIATE
-
-.( .)
-: ;CODE
-   POSTPONE (;CODE)
-   ?CSP POSTPONE [
-   REVEAL
-; IMMEDIATE
 .( .)
 WARNINGS ON
