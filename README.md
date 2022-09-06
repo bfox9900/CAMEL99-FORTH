@@ -31,7 +31,7 @@ been made by the cross-compiler. There are NO compiler words in the kernel to
 do IF/ELSE/THEN , BEGIN/UNTIL etc.  
 
 DSK1.START also pulls in DSK1.SYSTEMDTC to add the rest of the CORE words to 
-the kernel which includes IF,ELSE,THEN,BEGIN,UNTIL,WHILE and REPEAT.  
+the kernel which includes IF,ELSE,THEN,BEGIN,UNTIL,WHILE, REPEAT and DO/LOOP.  
 The file name is changed from DSK1.SYSTEM to clarify that one file is
 for the earlier ITC system and the SYSTEMDTC is for the DTC system.
 
