@@ -4,13 +4,13 @@
 \ In Indirect threaded Forth the W register holds the DATA field address.
 
 \ In CAMEL99 DTC Forth the "W" register that holds the CFA of a word is R5.
-\ The CFA of a DTC Forth word contain a branch & link instruction to an address.
+\ The CFA of a DTC Forth word contains a branch & link instruction to an address.
 \ We COULD increment R5 register by 4 to get to the DATA field but
 \ since we use a BL instruction to enter Forth DTC words we get the
 \ DATA field for free in R11. Neat trick.
 
 \ So TMS9900 BL and R11 makes it just a easy as ITC to use ;CODE in DTC Forth
-\ by using R11.
+\ by getting the data field from R11.
 
 \ DEMONSTRATION
 \ load the DTC Assembler. This will also give us ;CODE
