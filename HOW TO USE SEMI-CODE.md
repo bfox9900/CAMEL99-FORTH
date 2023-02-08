@@ -44,9 +44,10 @@ VP is initialized to HEX 1000 on system boot.
 
      100 VDP-CARRAY: ]VDP   \ create array at location of VP
 
-These will now give us the base address of the array. 
-     0 ]VDP .
-
+These code will give us the base address of the array in VDP RAM. 
+```
+    0 ]VDP .
+```
 We must read and write ]VDP with VC@  and VC! because it is not in RAM.
 
      HEX 
