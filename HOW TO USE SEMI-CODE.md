@@ -8,7 +8,7 @@ The CFA of a DTC Forth word contains the address of a branch & link
 instruction that branches to the "executor" for a high-level word.
 (DOCOL DOCON DOVAR)
 
-We COULD just increment the Forth IP register (R5) by 4 to get to the DATA field but since we use a BL instruction to enter a DTC colon definition  words we get the DATA field for free in the "link" register, R11. 
+We COULD just increment the Forth IP register (R5) by 4 to get to the DATA field but since we use a BL instruction to enter a DTC colon definition, we get the DATA field for free in the "link" register, R11. 
 Neat trick.
 
 So TMS9900 BL and R11 makes it just a easy as ITC to use ;CODE in DTC Forth.
