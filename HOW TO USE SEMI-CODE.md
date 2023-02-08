@@ -8,6 +8,7 @@ Forth word with ;CODE. In Indirect threaded Forth the W register (R8) holds the 
 
 The CFA of a DTC Forth word contains the address of a branch & link
 instruction that branches to the "executor" for a high-level word.
+
 (See: <colon:> in file DTCTYPES.HSF)
 
 We COULD just increment the Forth IP register (R5) by 4 to get to the DATA field but since we use a BL instruction to enter a DTC colon definition, we get the DATA field for free in the "link" register, R11. 
