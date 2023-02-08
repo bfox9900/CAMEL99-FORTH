@@ -40,10 +40,11 @@ VP is initialized to HEX 1000 on system boot.
 
      VP @  BYTE-ARRAY: ]VDP   \ create array at location of VP
 
-These two lines will now give us the same address: HEX 1000
+These two lines will now give us the same address: (HEX 1000 in VDP RAM) 
      VP @  .
      0 ]VDP .
 
-Remember to access ]VDP with VC@  and VC!
+Remember to read and write ]VDP with VC@  and VC!
 
-     HEX AB 4 ]VDP VC!
+     HEX 
+     AB 4 ]VDP VC! \ put byte AB in location 4
