@@ -20,11 +20,11 @@ So TMS9900 BL and R11 makes it just a easy as ITC to use ;CODE in DTC Forth.
 ### DEMONSTRATION
 Load the DTC Assembler.
 
+     INCLUDE DSK1.ASM9900
+
+Then compile this code: 
 ```
-INCLUDE DSK1.ASM9900
-
 HEX
-
 \ access VDP memory as fast arrays
 : VDP-CARRAY: ( n -- )
      CREATE                 \ make a name in the dictionary
