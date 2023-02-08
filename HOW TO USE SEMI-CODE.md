@@ -1,6 +1,6 @@
 #  Using ;CODE in DTC Forth
  ( How get to the DATA field)
- 
+
 The Forth word ;CODE is loaded in Camel99 DTC with SYSTEMDTC file when the system boots. This word allows you to make compiling words like CREATE DOES>
 but the execution happens at machine speeds because Assembly language is used rather than high-level Forth. 
 
@@ -26,10 +26,10 @@ INCLUDE DSK1.ASM9900
 HEX
 
 \ access VDP memory as fast arrays
-: VDP-CARRAY: ( Vaddr -- )
+: VDP-CARRAY: ( n -- )
      CREATE                 \ make a name in the dictionary
-        DUP  ,              \ compile the array's base address
-        VP +!               \ also move the VDP memory pointer forward
+        VP @ ,              \ compile the array's base address
+        VP +!               \ move the VP pointer forward by n bytes 
 
      ;CODE ( n -- Vaddr')   \ RUN time
        *R11 TOS ADD,        \ indirect R11 gives us the base address 
@@ -42,13 +42,13 @@ HEX
 VP is the Video RAM memory pointer analogous to DP in the CPU RAM. 
 VP is initialized to HEX 1000 on system boot.
 
-     VP @  BYTE-ARRAY: ]VDP   \ create array at location of VP
+     100 VDP-CARRAY: ]VDP   \ create array at location of VP
 
-These two lines will now give us the same address: (HEX 1000 in VDP RAM) 
-     VP @  .
+These will now give us the base address of the array. 
      0 ]VDP .
 
-Remember to read and write ]VDP with VC@  and VC!
+We must read and write ]VDP with VC@  and VC! because it is not in RAM.
 
      HEX 
      AB 4 ]VDP VC! \ put byte AB in location 4
+     4 ]VPD VC@ .  \ print the contents of location 4
