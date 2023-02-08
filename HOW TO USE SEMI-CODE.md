@@ -8,15 +8,13 @@ The CFA of a DTC Forth word contains the address of a branch & link
 instruction that branches to the "executor" for a high-level word.
 (DOCOL DOCON DOVAR)
 
-We COULD increment R5 register by 4 to get to the DATA field but
-since we use a BL instruction to enter Forth DTC words we get the
-DATA field for free in R11. Neat trick.
+We COULD just increment the Forth IP register (R5) by 4 to get to the DATA field but since we use a BL instruction to enter a DTC colon definition  words we get the DATA field for free in the "link" register, R11. 
+Neat trick.
 
 So TMS9900 BL and R11 makes it just a easy as ITC to use ;CODE in DTC Forth.
 
-
 ### DEMONSTRATION
-Load the DTC Assemble to give us ;CODE
+Load the DTC Assembler to give us ;CODE
 
 ```
 INCLUDE DSK1.ASM9900
@@ -32,6 +30,7 @@ HEX
        *R11 TOS ADD,  ( add base address to index in TOS)
        NEXT,
      ENDCODE
+```
 
 VP is the Video RAM memory pointer analogous to DP in the CPU RAM. 
 VP is initialized to HEX 1000 on boot-up.
@@ -44,4 +43,4 @@ These two lines will now give us the same address: HEX 1000
 
 Remember to access ]VDP with VC@  and VC!
 
-HEX AB 4 ]VDP VC!
+     HEX AB 4 ]VDP VC!
