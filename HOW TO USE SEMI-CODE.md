@@ -22,18 +22,21 @@ INCLUDE DSK1.ASM9900
 HEX
 
 \ access VDP memory as fast arrays
-: BYTE-ARRAY: ( Vaddr -- )
+: VDP-CARRAY: ( Vaddr -- )
      CREATE                 \ make a name in the dictionary
-            ,               \ compile the array's base address
+        DUP  ,              \ compile the array's base address
+        VP +!               \ also move the VDP memory pointer forward
 
      ;CODE ( n -- Vaddr')   \ RUN time
-       *R11 TOS ADD,  ( add base address to index in TOS)
+       *R11 TOS ADD,        \ indirect R11 gives us the base address 
+                            \ which we add to n, returning the array 
+                            \ location
        NEXT,
      ENDCODE
 ```
-
+#### Note:
 VP is the Video RAM memory pointer analogous to DP in the CPU RAM. 
-VP is initialized to HEX 1000 on boot-up.
+VP is initialized to HEX 1000 on system boot.
 
      VP @  BYTE-ARRAY: ]VDP   \ create array at location of VP
 
